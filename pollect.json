@@ -1,0 +1,137 @@
+{
+  "tickTime": 10,
+  "writer": {
+	"type": "Prometheus",
+	"port": 9001
+  },
+  "executors": [
+	{
+	  "collection": "slowData",
+	  "tickTime": 120,
+	  "sources": [
+		{
+		  "type": "SnmpGet",
+		  "name": "Procurve",
+		  "host": "10.1.100.1",
+		  "communityString": "public",
+		  "metrics": [
+			{
+			  "oids": [
+				"iso.3.6.1.2.1.16.1.1.1.4.1",
+				"iso.3.6.1.2.1.16.1.1.1.4.2",
+				"iso.3.6.1.2.1.16.1.1.1.4.3",
+				"iso.3.6.1.2.1.16.1.1.1.4.4",
+				"iso.3.6.1.2.1.16.1.1.1.4.5"
+			  ],
+			  "name": "throughput",
+			  "mode": "rate"
+			}
+		  ]
+		}
+	  ]
+	},
+	{
+	  "collection": "Apps",
+	  "tickTime": 43200,
+	  "sources": [
+		{
+		  "type": "Gdc",
+		  "bucketName": "pubsite_prod_rev_1234",
+		  "keyFile": "api-project-1234.json",
+		  "dbDir": "db",
+		  "apps": [
+			{
+			  "package": "my.app.package",
+			  "name": "My App"
+			}
+		  ]
+		},
+		{
+		  "type": "AppStoreConnect",
+		  "keyId": "ASDH123123",
+		  "keyFile": "my_api_key.p8",
+		  "issuerId": "asdasd-123123asd-asd12312-asd",
+		  "vendorNumber": "882223",
+		  "dbDir": "db"
+		}
+	  ]
+	},
+	{
+	  "collection": "pollect",
+	  "sources": [
+		{
+		  "type": "Http",
+		  "name": "dev_core",
+		  "url": "https://google.com"
+		},
+		{
+		  "type": "LoadAvg"
+		},
+		{
+		  "type": "DiskUsage",
+		  "disks": [
+			"/"
+		  ]
+		},
+		{
+		  "type": "MemoryUsage"
+		},
+		{
+		  "type": "Interface",
+		  "include": [
+			"venet0"
+		  ],
+		  "exclude": [],
+		  "includeTotal": false
+		},
+		{
+		  "type": "IO",
+		  "include": [],
+		  "exclude": [
+			"sdb1"
+		  ]
+		},
+		{
+		  "type": "SmartCtl",
+		  "tickTime": 60,
+		  "attributes": [
+			"Temperature_Celsius",
+			"Reallocated_Sector_Ct"
+		  ],
+		  "devices": [
+			"sd[a-z}+$"
+		  ]
+		},
+		{
+		  "type": "Sensors",
+		  "tickTime": 60,
+		  "include": [
+			"coretemp-isa-0000"
+		  ],
+		  "exclude": []
+		},
+		{
+		  "type": "Bind",
+		  "url": "http://192.168.1.10:8053",
+		  "views": [
+			"_default"
+		  ]
+		},
+		{
+		  "type": "Plex",
+		  "url": "http://192.168.1.10:32400"
+		},
+		{
+		  "type": "MMI",
+		  "credentials": "mmiCreds.json",
+		  "vin": ""
+		},
+		{
+		  "type": "Fritz",
+		  "pass": "0000",
+		  "ip": "192.168.1.1"
+		}
+	  ]
+	}
+  ]
+}
