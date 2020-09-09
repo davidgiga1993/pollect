@@ -3,6 +3,10 @@ pollect is a daemon for collecting system and application metrics in periodical 
 (similar to collectd).
 It's designed to require very little dependencies to run.
 
+```
+pip install pollect
+```
+
 # Architecture
 pollect uses `executors` which contain `sources` for probing the data. 
 The data is exported using the `collection` name.
