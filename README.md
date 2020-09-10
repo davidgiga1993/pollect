@@ -148,7 +148,7 @@ Bind DNS server statistics.
 ## SNMP `SnmpGet`
 Wrapper for the snmpget binary.
 
-```json
+```
 {
 	"type": "SnmpGet",
 	"name": "Procurve",
@@ -198,7 +198,7 @@ Requires the google-cloud-storage package.
 **Important** each fetch will call the google cloud storage api to check for updates so make sure to call is less frequent (every 30min or so).
   
 Sample config:
-```json
+```
 {
   "type": "Gdc",
   // Name of the bucket - this can be found at the bottom of the bulk export page in the GDC
