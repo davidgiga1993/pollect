@@ -181,25 +181,32 @@ class ViessmannApi:
 
 
 class ViessmannSource(Source):
+    AUTH_FILE = 'viessmann_token.json'
 
     def __init__(self, config):
         super().__init__(config)
         user = config.get('user')
         password = config.get('password')
         self.api = ViessmannApi()
-        auth_file = 'viessmann_token.json'
-        if os.path.isfile(auth_file):
-            token = OAuthToken.load(auth_file)
+        if os.path.isfile(self.AUTH_FILE):
+            token = OAuthToken.load(self.AUTH_FILE)
             self.api.use_token(token)
             token = self.api.get_token()
-            token.persist(auth_file)
+            token.persist(self.AUTH_FILE)
         else:
             token = self.api.login(user, password)
-            token.persist(auth_file)
+            token.persist(self.AUTH_FILE)
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
-        values = ValueSet()
 
+        # A token refresh might be required
+        token = self.api.get_token()
+        self.api.use_token(token)
+        if token.access_token != self.api.get_token().access_token:
+            # Token has changed
+            token.persist(self.AUTH_FILE)
+
+        values = ValueSet()
         installations = self.api.get_installations()
         install_id = installations[0].get_id()
         gateway = installations[0].get_gateway()
