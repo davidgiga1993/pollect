@@ -1,5 +1,8 @@
+from typing import List
+
 from prometheus_client import start_http_server, Gauge
 
+from pollect.core.ValueSet import ValueSet
 from pollect.writers.Writer import Writer
 
 
@@ -16,7 +19,7 @@ class PrometheusWriter(Writer):
     def stop(self):
         pass
 
-    def write(self, data):
+    def write(self, data: List[ValueSet]):
         for value_set in data:
             for value_obj in value_set.values:
                 path = value_set.name
@@ -29,6 +32,11 @@ class PrometheusWriter(Writer):
                     self._exporters[path] = Gauge(path, path, labelnames=value_set.labels)
                 gauge = self._exporters[path]
                 if len(value_set.labels) > 0:
+                    if len(value_obj.label_values) != len(value_set.labels):
+                        raise ValueError('Incorrect label count for ' + path + ': Got ' +
+                                         str(len(value_set.labels)) + ' labels and ' +
+                                         str(len(value_obj.label_values)) + ' label names')
+
                     gauge.labels(*value_obj.label_values).set(value_obj.value)
                     continue
                 gauge.set(value_obj.value)
