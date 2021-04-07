@@ -25,8 +25,7 @@ Core 1:         +30.0°C  (high = +80.0°C, crit = +100.0°C)
     @patch('pollect.sources.SensorsSource.subprocess.check_output')
     def test_simple(self, mock_check_output):
         mock_check_output.return_value = self.OUT.encode('utf-8')
-        data = {}
-        source = SensorsSource(data)
+        source = SensorsSource({'type': '-'})
         results = source.probe()[0]
 
         self.assertEqual('asus-isa-0000', results.values[0].name)

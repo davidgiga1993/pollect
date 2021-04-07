@@ -39,7 +39,8 @@ ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_
         mock_os.listdir.return_value = ['sda']
         mock_check_output.return_value = self.OUT
         data = {'attributes': ['Power_Cycle_Count'],
-                'devices': ['sda']}
+                'devices': ['sda'],
+                'type': '-'}
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
@@ -51,7 +52,8 @@ ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_
         mock_os.listdir.return_value = ['sda', 'sda1', 'sdb', 'sdb1']
         mock_check_output.return_value = self.OUT
         data = {'attributes': ['Power_Cycle_Count'],
-                'devices': ['sd[a-z]$']}
+                'devices': ['sd[a-z]$'],
+                'type': '-'}
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(2, len(results.values))
@@ -66,7 +68,8 @@ ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_
         mock_os.listdir.return_value = ['sda']
         mock_check_output.return_value = self.OUT
         data = {'attributes': ['Raw_Read_Error_Rate'],
-                'devices': ['sda']}
+                'devices': ['sda'],
+                'type': '-'}
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
@@ -78,7 +81,8 @@ ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_
         mock_os.listdir.return_value = ['sda']
         mock_check_output.return_value = self.OUT
         data = {'attributes': ['Airflow_Temperature_Cel'],
-                'devices': ['sda']}
+                'devices': ['sda'],
+                'type': '-'}
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(32, results.values[0].value)

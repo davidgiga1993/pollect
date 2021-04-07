@@ -27,7 +27,8 @@ class TestSnmpGetSource(TestCase):
             'metrics': [{
                 'oids': ['iso.3.6.1.2.1.16.1.1.1.3.48'],
                 'name': 'Test'
-            }]
+            }],
+            'type': '-'
         })
 
         data = source.probe()[0]
@@ -46,7 +47,8 @@ iso.3.6.1.2.1.16.1.1.1.3.1 = Counter32: 10'''
                 'oids': ['iso.3.6.1.2.1.16.1.1.1.3.48',
                          'iso.3.6.1.2.1.16.1.1.1.3.1'],
                 'name': 'Test'
-            }]
+            }],
+            'type': '-'
         })
 
         data = source.probe()[0]
@@ -65,7 +67,8 @@ iso.3.6.1.2.1.16.1.1.1.3.1 = Counter32: 10'''
                 'oids': ['iso.3.6.1.2.1.16.1.1.1.3.48'],
                 'name': 'Test',
                 'mode': 'rate'
-            }]
+            }],
+            'type': '-'
         })
 
         # First run returns nothing
@@ -91,7 +94,8 @@ iso.3.6.1.2.1.16.1.1.1.3.1 = Counter32: 10'''
                 'oids': ['iso.3.6.1.2.1.16.1.1.1.3.48'],
                 'name': 'Test',
                 'mode': 'rate'
-            }]
+            }],
+            'type': '-'
         })
 
         # First run returns nothing

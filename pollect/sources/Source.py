@@ -9,9 +9,12 @@ from pollect.sources import Log
 
 
 class Source:
+    type: str = None
+    name: Optional[str] = None
+
     def __init__(self, config):
         self.name = config.get('name')
-        self.type = config.get('type')
+        self.type = config['type']
         self.global_conf = None
         """
         Global configuration

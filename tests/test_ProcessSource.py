@@ -7,7 +7,8 @@ class TestProcessSource(TestCase):
     def test_simple_query(self):
         source = ProcessSource({
             'name': 'test',
-            'procRegex': 'python.+'
+            'procRegex': 'python.+',
+            'type': '-'
         })
         data = source.probe()[0]
         self.assertIsNotNone(data)
