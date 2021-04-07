@@ -38,7 +38,7 @@ class TestCore(TestCase):
                             "name": "dev_core",
                             "url": "https://google.com",
                             "timeout": 1
-                        }
+                        },
                     ]
                 }
             ]

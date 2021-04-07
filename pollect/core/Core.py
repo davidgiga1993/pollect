@@ -100,6 +100,10 @@ class Executor:
             now = int(time.time())
             try:
                 value_sets = source.probe()
+                delta = int(time.time()) - now
+                if delta > 10:
+                    Log.warning('Probing of ' + str(source) + ' took ' + str(delta) + ' seconds')
+
             except Exception as e:
                 # Catch all errors that could occur and ignore them
                 traceback.print_exc()

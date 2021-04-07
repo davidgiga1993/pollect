@@ -34,10 +34,14 @@ class FritzSource(Source):
     def _probe(self) -> Optional[ValueSet]:
         connection = FritzConnection(address=self._address, password=self._pass)
         new_data = {}
-        output = connection.call_action('WANCommonInterfaceConfig:1', 'GetTotalBytesReceived')
+        service_name = 'WANCommonInterfaceConfig:1'
+        if service_name not in connection.services:
+            # Use legacy fallback
+            service_name = 'WANCommonIFC1'
+        output = connection.call_action(service_name, 'GetTotalBytesReceived')
         new_data['recv_bytes_sec'] = output['NewTotalBytesReceived']
 
-        output = connection.call_action('WANCommonInterfaceConfig:1', 'GetTotalBytesSent')
+        output = connection.call_action(service_name, 'GetTotalBytesSent')
         new_data['sent_bytes_sec'] = output['NewTotalBytesSent']
 
         data = ValueSet()

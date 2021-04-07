@@ -36,7 +36,7 @@ class Source:
         """
         results = self._probe()
         if results is None:
-            return results
+            return None
         if isinstance(results, ValueSet):
             results = [results]
         for result in results:
