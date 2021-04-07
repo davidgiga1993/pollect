@@ -1,10 +1,14 @@
+"""
+Collects data from viessmann devices.
+This requires a viessmann account
+"""
 from __future__ import annotations
 
 import json
 import os
 import re
 import time
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 import requests
 
@@ -48,6 +52,10 @@ class Installation(DataEntity):
 
 
 class OAuthToken:
+    """
+    Represents an oauth token
+    """
+
     access_token: str = ''
     refresh_token: str = ''
     token_type: str = ''
@@ -95,14 +103,29 @@ class ViessmannApi:
     _token: Optional[OAuthToken] = None
 
     def use_token(self, token: OAuthToken):
+        """
+        Uses the given token. If the token has expired, a new token will be
+        requested automatically
+        :param token: Token
+        """
         if token.is_expired():
             token = self._refresh_token(token)
         self._token = token
 
     def get_token(self) -> OAuthToken:
+        """
+        Return the current token
+        :return: Token
+        """
         return self._token
 
     def login(self, user: str, password: str) -> OAuthToken:
+        """
+        Logs in using the given user and password
+        :param user: User
+        :param password: Password
+        :return: Token
+        """
         url = ViessmannApi.AUTH_URL + '?client_id=' + ViessmannApi.CLIENT_ID + \
               '&scope=' + ViessmannApi.SCOPE + \
               '&redirect_uri=' + ViessmannApi.CALLBACK_URL + \
@@ -141,7 +164,8 @@ class ViessmannApi:
                          path)
         return data
 
-    def _refresh_token(self, token: OAuthToken) -> OAuthToken:
+    @staticmethod
+    def _refresh_token(token: OAuthToken) -> OAuthToken:
         token_config = {
             'grant_type': 'refresh_token',
             'refresh_token': token.refresh_token,
@@ -153,7 +177,8 @@ class ViessmannApi:
             raise ValueError('Could not refresh token from code: ' + reply.text)
         return OAuthToken(reply.json())
 
-    def _get_token_from_code(self, code: str) -> OAuthToken:
+    @staticmethod
+    def _get_token_from_code(code: str) -> OAuthToken:
         token_config = {
             'grant_type': 'authorization_code',
             'code': code,
@@ -168,13 +193,22 @@ class ViessmannApi:
             raise ValueError('Could not get access token from code: ' + reply.text)
         return OAuthToken(reply.json())
 
-    def _get(self, path: str):
+    def _get(self, path: str) -> Dict[str, any]:
+        """
+        Calls the API at the given path
+        :param path: Path
+        :return: Data
+        """
         reply = requests.get(ViessmannApi.API_URL + path, headers=self._get_headers())
         if reply.status_code != 200:
             raise ValueError('Invalid reply for ' + path + ': ' + reply.text)
         return reply.json()
 
-    def _get_headers(self):
+    def _get_headers(self) -> Dict[str, str]:
+        """
+        Returns the headers which should be used for regular requests
+        :return: Headers
+        """
         return {
             'Authorization': 'Bearer ' + self._token.access_token,
         }
