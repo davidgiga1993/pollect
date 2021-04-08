@@ -32,7 +32,7 @@ class FritzSource(Source):
         """
 
     def _probe(self) -> Optional[ValueSet]:
-        connection = FritzConnection(address=self._address, password=self._pass)
+        connection = FritzConnection(address=self._address, password=self._pass, timeout=10)
         new_data = {}
         service_name = 'WANCommonInterfaceConfig:1'
         if service_name not in connection.services:
