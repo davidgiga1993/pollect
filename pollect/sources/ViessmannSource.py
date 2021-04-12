@@ -133,4 +133,9 @@ class ViessmannSource(Source):
         hot_water_target = features.get_entity('heating.dhw.temperature').get_property_value('value')
         values.add(Value(hot_water_target, name='hot_water_target_temp'))
 
+        # Temperature profiles
+        program_normal = features.get_entity('heating.circuits.0.operating.programs.normal')\
+            .get_property_value('temperature')
+        values.add(Value(program_normal, name='program_normal_temp'))
+
         return values
