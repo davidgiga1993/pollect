@@ -217,6 +217,19 @@ the [homematicip](https://homematicip-rest-api.readthedocs.io/en/latest/gettings
 | authToken | Auth token |
 | accessPoint | Access point id |
 
+## TP-LINK EAP `TpLinkEap`
+
+Collects wifi statistics of the TP-LINK EAP series devices.
+This uses the rest api of the device.
+Note that the devices only support one session at a time, meaning you will be logged out from the
+web UI in regular intervals.
+
+| Param | Desc |
+| --- | --- |
+| url | URL to the admin UI |
+| user | Username  |
+| password | Password |
+
 ## Audi MMI `MMI`
 
 Connects to the audi MMI backend and collects data. Requires the [audi api](https://github.com/davidgiga1993/AudiAPI)
