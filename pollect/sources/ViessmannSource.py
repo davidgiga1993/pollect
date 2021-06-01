@@ -28,6 +28,7 @@ class ViessmannSource(Source):
         else:
             token = self.api.login(user, password)
             token.persist(self.AUTH_FILE)
+            self.api.use_token(token)
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
 
