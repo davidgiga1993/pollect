@@ -1,35 +1,37 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import requests
 
 
-class DataEntity:
+class JsonObject:
     def __init__(self, data):
-        self.data_classes = data.get('class', [])
+        self._data = data
+
+
+class Feature(JsonObject):
+    def __init__(self, data):
+        super().__init__(data)
+        self.feature = data['feature']  # type: str
+        self.is_enabled = data['isEnabled']  # type: bool
+        self.is_ready = data['isReady']  # type: bool
+
         self.properties = data.get('properties', {})
-        self.entities = [DataEntity(x) for x in data.get('entities', [])]
+        self.commands = data.get('commands', {})
+        self.components = data.get('components', [])
         self.links = data.get('links', [])
         self.actions = data.get('actions', [])
 
-    def get_entity(self, class_str: str) -> Optional[DataEntity]:
-        for entity in self.entities:
-            if class_str in entity.data_classes:
-                return entity
-        return None
+    def get_property(self, property_name: str):
+        return self.properties.get(property_name)
 
-    def get_id(self) -> int:
-        return self.properties['id']
-
-    def get_property(self, key: str):
-        return self.properties.get(key)
-
-    def get_property_value(self, key: str):
-        value_data = self.get_property(key)
+    def get_property_value(self, property_name: str):
+        value_data = self.get_property(property_name)
         return value_data['value']
 
     def get_action(self, name: str):
@@ -39,14 +41,43 @@ class DataEntity:
         return None
 
 
-class Installation(DataEntity):
+class FeatureList:
+    def __init__(self, data):
+        self.features = [Feature(x) for x in data['data']]
+
+    def get_feature(self, name: str) -> Feature:
+        for feature in self.features:
+            if feature.feature == name:
+                return feature
+        raise KeyError('Feature ' + name + ' not found')
+
+
+class Device(JsonObject):
+    TYPE_VITOCONNECT = 'vitoconnect'
+
     def __init__(self, data):
         super().__init__(data)
-        if 'model.installation' not in self.data_classes:
-            raise ValueError('Invalid data class: ' + str(self.data_classes))
+        self.id = data['id']  # type: str
+        self.device_type = data['deviceType']
 
-    def get_gateway(self) -> DataEntity:
-        return self.get_entity('model.gateway')
+
+class Gateway(JsonObject):
+    def __init__(self, data):
+        super().__init__(data)
+        self.serial = data['serial']
+        self.version = data['version']
+        self.aggregated_status = data['aggregatedStatus']
+        self.devices = [Device(x) for x in data.get('devices', [])]
+
+
+class Installation(JsonObject):
+    def __init__(self, data):
+        super().__init__(data)
+        self.id = data['id']  # type: int
+        self.description = data['description']
+        self.updated_at = data['updatedAt']
+        self.aggregated_status = data['aggregatedStatus']
+        self.gateways = [Gateway(x) for x in data.get('gateways', [])]  # type: List[Gateway]
 
 
 class OAuthToken:
@@ -85,54 +116,105 @@ class OAuthToken:
             json.dump(self.__dict__, file)
 
 
-class ViessmannApi:
-    # These settings are from the ViCare app
+class ViessmannOauth:
+    authorize_url = "https://iam.viessmann.com/idp/v2/authorize"
+    token_url = "https://iam.viessmann.com/idp/v2/token"
+
+    # These settings are from the ViCare app and are not used anymore
     CLIENT_ID = '79742319e39245de5f91d15ff4cac2a8'
     SECRET = '8ad97aceb92c5892e102b093c7c083fa'
     API_KEY = 'token 38c97795ed8ae0ec139409d785840113bb0f5479893a72997932d447bd1178c8'
     SCOPE = 'offline_access'
     CALLBACK_URL = 'vicare://oauth-callback/everest'
 
-    AUTH_URL = 'https://iam.viessmann.com/idp/v1/authorize'
-    TOKEN_URL = 'https://iam.viessmann.com/idp/v1/token'
-
-    API_URL = 'https://api.viessmann-platform.io'
-
-    _token: Optional[OAuthToken] = None
-
-    def use_token(self, token: OAuthToken):
-        """
-        Uses the given token. If the token has expired, a new token will be
-        requested automatically
-        :param token: Token
-        """
-        if token.is_expired():
-            token = self._refresh_token(token)
-        self._token = token
+    def __init__(self, client_id: str, callback_url: str, cache_path: str):
+        self._client_id = client_id
+        self._callback_url = callback_url
+        self._current_token = None  # type: Optional[OAuthToken]
+        self._cache_path = cache_path
 
     def get_token(self) -> OAuthToken:
-        """
-        Return the current token
-        :return: Token
-        """
-        return self._token
+        if self._current_token is None:
+            if not os.path.exists(self._cache_path):
+                raise ValueError('No token defined and no token found at ' + self._cache_path +
+                                 'Make sure to authorize first')
+            self._current_token = OAuthToken.load(self._cache_path)
+
+        if self._current_token.is_expired():
+            self.refresh()
+
+        return self._current_token
+
+    def authorize(self):
+        authorization_redirect_url = self.authorize_url + '?response_type=code' \
+                                                          '&client_id=' + self._client_id + \
+                                     '&redirect_uri=' + self._callback_url + \
+                                     '&response_type=code' \
+                                     '&code_challenge_method=plain' \
+                                     '&code_challenge=DbyrQKpOn0Iy07u6ydCdo5XFVO4fIb7cIJW6mnLPDVc' \
+                                     '&scope=IoT%20User%20offline_access'
+
+        print("Go to the following url and enter the code from the returned url: ")
+        print(authorization_redirect_url)
+
+        authorization_code = ''
+        while authorization_code == '':
+            authorization_code = input('code=')
+            if len(authorization_code) < 10:
+                print('Invalid code, try again')
+                authorization_code = ''
+
+        data = {'grant_type': 'authorization_code',
+                'client_id': self._client_id,
+                'code': authorization_code,
+                'redirect_uri': self._callback_url,
+                'code_verifier': 'DbyrQKpOn0Iy07u6ydCdo5XFVO4fIb7cIJW6mnLPDVc',
+                }
+        print("Requesting access token")
+        access_token_response = requests.post(self.token_url, data=data, allow_redirects=False)
+        if access_token_response.status_code != 200:
+            raise ValueError('Access token request failed: ' + str(access_token_response.text))
+
+        token = OAuthToken(access_token_response.json())
+        self._set_token(token)
+        return token
+
+    def refresh(self, refresh_token: str = None) -> OAuthToken:
+        if refresh_token is None:
+            return self.refresh(self._current_token.refresh_token)
+
+        api_call_response = requests.post(self.token_url, data={
+            'grant_type': 'refresh_token',
+            'client_id': self._client_id,
+            'refresh_token': refresh_token
+        })
+        if api_call_response.status_code != 200:
+            raise ValueError('Refresh failed: ' + str(api_call_response.text))
+
+        token = OAuthToken(api_call_response.json())
+        self._set_token(token)
+        return token
+
+    def _set_token(self, token: OAuthToken):
+        self._current_token = token
+        token.persist(self._cache_path)
 
     def login(self, user: str, password: str) -> OAuthToken:
         """
-        Logs in using the given user and password
+        Logs in using the given user and password (deprecated!)
         :param user: User
         :param password: Password
         :return: Token
         """
-        url = ViessmannApi.AUTH_URL + '?client_id=' + ViessmannApi.CLIENT_ID + \
-              '&scope=' + ViessmannApi.SCOPE + \
-              '&redirect_uri=' + ViessmannApi.CALLBACK_URL + \
+        url = ViessmannOauth.authorize_url + '?client_id=' + ViessmannOauth.CLIENT_ID + \
+              '&scope=' + ViessmannOauth.SCOPE + \
+              '&redirect_uri=' + ViessmannOauth.CALLBACK_URL + \
               '&response_type=code'
 
         reply = requests.post(url,
                               auth=(user, password),
                               headers={
-                                  'x-api-key': ViessmannApi.API_KEY
+                                  'x-api-key': ViessmannOauth.API_KEY
                               },
                               allow_redirects=False)
 
@@ -146,19 +228,65 @@ class ViessmannApi:
         token = self._get_token_from_code(code)
         return token
 
+    @staticmethod
+    def _get_token_from_code(code: str) -> OAuthToken:
+        """
+        DEPRECATED!
+        """
+        token_config = {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': ViessmannOauth.CALLBACK_URL,
+            'client_id': ViessmannOauth.CLIENT_ID,
+            'client_secret': ViessmannOauth.SECRET,
+            'scope': ViessmannOauth.SCOPE,
+        }
+        reply = requests.post(ViessmannOauth.token_url, data=token_config,
+                              auth=(ViessmannOauth.CLIENT_ID, ViessmannOauth.SECRET))
+        if reply.status_code != 200:
+            raise ValueError('Could not get access token from code: ' + reply.text)
+        return OAuthToken(reply.json())
+
+    @staticmethod
+    def _app_refresh_token(token: OAuthToken) -> OAuthToken:
+        """
+        DEPRECATED!
+        """
+        token_config = {
+            'grant_type': 'refresh_token',
+            'refresh_token': token.refresh_token,
+        }
+        reply = requests.post(ViessmannApi.token_url, data=token_config,
+                              auth=(ViessmannOauth.CLIENT_ID, ViessmannOauth.SECRET))
+
+        if reply.status_code != 200:
+            raise ValueError('Could not refresh token from code: ' + reply.text)
+        return OAuthToken(reply.json())
+
+
+class ViessmannApi:
+    API_URL = 'https://api.viessmann.com/iot'
+
+    def __init__(self, auth: ViessmannOauth):
+        self._auth = auth
+
     def get_installations(self):
-        reply = self._get('/general-management/installations')
-        installations = reply.get('entities', [])
+        reply = self._get('/v1/equipment/installations?includeGateways=true')
+        installations = reply.get('data', [])
         return [Installation(x) for x in installations]
 
-    def get_features(self, installation_id: int, gateway_serial: str, device_id: int) -> DataEntity:
-        data = self.get_operational_data(installation_id, gateway_serial, device_id, '/features')
-        return DataEntity(data)
+    def get_feature(self, installation_id: int, gateway_serial: str, device_id: str, feature: str) -> FeatureList:
+        data = self.get_operational_data(installation_id, gateway_serial, device_id, '/features/' + feature)
+        return FeatureList(data)
 
-    def get_operational_data(self, installation_id: int, gateway_serial: str, device_id: int, path: str):
-        data = self._get('/operational-data/installations/' + str(installation_id) +
+    def get_features(self, installation_id: int, gateway_serial: str, device_id: str) -> FeatureList:
+        data = self.get_operational_data(installation_id, gateway_serial, device_id, '/features')
+        return FeatureList(data)
+
+    def get_operational_data(self, installation_id: int, gateway_serial: str, device_id: str, path: str):
+        data = self._get('/v1/equipment/installations/' + str(installation_id) +
                          '/gateways/' + gateway_serial +
-                         '/devices/' + str(device_id) +
+                         '/devices/' + device_id +
                          path)
         return data
 
@@ -167,35 +295,6 @@ class ViessmannApi:
         href = action['href']
         self._exec(method, href, data)
         # const result: Either<string, boolean> = await client.executeAction('heating.circuits.0.operating.programs.comfort', 'setTemperature', {targetTemperature: 22});
-
-    @staticmethod
-    def _refresh_token(token: OAuthToken) -> OAuthToken:
-        token_config = {
-            'grant_type': 'refresh_token',
-            'refresh_token': token.refresh_token,
-        }
-        reply = requests.post(ViessmannApi.TOKEN_URL, data=token_config,
-                              auth=(ViessmannApi.CLIENT_ID, ViessmannApi.SECRET))
-
-        if reply.status_code != 200:
-            raise ValueError('Could not refresh token from code: ' + reply.text)
-        return OAuthToken(reply.json())
-
-    @staticmethod
-    def _get_token_from_code(code: str) -> OAuthToken:
-        token_config = {
-            'grant_type': 'authorization_code',
-            'code': code,
-            'redirect_uri': ViessmannApi.CALLBACK_URL,
-            'client_id': ViessmannApi.CLIENT_ID,
-            'client_secret': ViessmannApi.SECRET,
-            'scope': ViessmannApi.SCOPE,
-        }
-        reply = requests.post(ViessmannApi.TOKEN_URL, data=token_config,
-                              auth=(ViessmannApi.CLIENT_ID, ViessmannApi.SECRET))
-        if reply.status_code != 200:
-            raise ValueError('Could not get access token from code: ' + reply.text)
-        return OAuthToken(reply.json())
 
     def _get(self, path: str) -> Dict[str, any]:
         """
@@ -224,6 +323,7 @@ class ViessmannApi:
         Returns the headers which should be used for regular requests
         :return: Headers
         """
+        token = self._auth.get_token()
         return {
-            'Authorization': 'Bearer ' + self._token.access_token,
+            'Authorization': 'Bearer ' + token.access_token,
         }
