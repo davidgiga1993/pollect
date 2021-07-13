@@ -1,3 +1,4 @@
+import re
 from typing import Optional, List
 
 import requests
@@ -28,7 +29,7 @@ class OpenhabSource(Source):
                 continue
 
             # Sanitize label name
-            label = label.replace(' ', '_')
+            label = re.sub(r'[^a-zA-Z0-9_:]+', '_', label)
 
             state = item.get('state')
             if item_type == 'Number':
