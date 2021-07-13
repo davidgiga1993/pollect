@@ -19,20 +19,26 @@ class OpenhabSource(Source):
         reply = requests.get(self._url + '/rest/items?recursive=true')
         data = reply.json()
 
-        value_set = ValueSet(labels=['group'])
+        value_set = ValueSet(labels=['name', 'group'])
         for item in data:
             item_type = item.get('type')
             group_names = ','.join(item.get('groupNames', []))
-            state = item.get('state')
+            label = item.get('label')
+            if label is None:
+                continue
 
+            # Sanitize label name
+            label = label.replace(' ', '_')
+
+            state = item.get('state')
             if item_type == 'Number':
                 try:
                     number = float(state)
-                    value_set.add(Value(number, label_values=[group_names], name=item['name']))
+                    value_set.add(Value(number, label_values=[item['name'], group_names], name=label))
                 except ValueError:
                     # Value might be null
                     continue
             if item_type == 'Switch':
-                value_set.add(Value(state == 'ON', label_values=[group_names], name=item['name']))
+                value_set.add(Value(state == 'ON', label_values=[item['name'], group_names], name=label))
 
         return value_set
