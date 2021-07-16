@@ -230,6 +230,16 @@ web UI in regular intervals.
 | user | Username  |
 | password | Password |
 
+
+## Openhab `Openhab`
+
+Collects the values of all channels of all items in openhab.
+This contains more data than the original metrics exporter of openhab (since it doesn't include all items). 
+
+| Param | Desc |
+| --- | --- |
+| url | URL to openhab |
+
 ## Audi MMI `MMI`
 
 Connects to the audi MMI backend and collects data. Requires the [audi api](https://github.com/davidgiga1993/AudiAPI)

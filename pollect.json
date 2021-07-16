@@ -130,6 +130,15 @@
 		  "type": "Fritz",
 		  "pass": "0000",
 		  "ip": "192.168.1.1"
+		},
+		{
+		  "type": "HomematicIp",
+		  "authToken": "",
+		  "accessPoint": ""
+		},
+		{
+		  "type": "Openhab",
+		  "url": "http://localhost:8080"
 		}
 	  ]
 	}
