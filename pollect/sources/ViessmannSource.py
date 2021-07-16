@@ -102,18 +102,18 @@ class ViessmannSource(Source):
         comp_hours_class_5 = compressor_stats.get_property_value('hoursLoadClassFive')
         main_set.add(Value(comp_hours_class_5, name='compressor_stats_hours_class_5'))
 
-        heating_rod = features.get_feature('heating.heatingRod.status')
-        heating_rod_on = heating_rod.get_property_value('overall')
-        main_set.add(Value(heating_rod_on, name='heating_rod_active'))
+        # heating_rod = features.get_feature('heating.heatingRod.status')
+        # heating_rod_on = heating_rod.get_property_value('overall')
+        # main_set.add(Value(heating_rod_on, name='heating_rod_active'))
 
-        heating_rod_on_level1 = heating_rod.get_property_value('level1')
-        main_set.add(Value(heating_rod_on_level1, name='heating_rod_active_level_1'))
+        # heating_rod_on_level1 = heating_rod.get_property_value('level1')
+        # main_set.add(Value(heating_rod_on_level1, name='heating_rod_active_level_1'))
 
-        heating_rod_on_level2 = heating_rod.get_property_value('level2')
-        main_set.add(Value(heating_rod_on_level2, name='heating_rod_active_level_2'))
+        # heating_rod_on_level2 = heating_rod.get_property_value('level2')
+        # main_set.add(Value(heating_rod_on_level2, name='heating_rod_active_level_2'))
 
-        heating_rod_on_level3 = heating_rod.get_property_value('level3')
-        main_set.add(Value(heating_rod_on_level3, name='heating_rod_active_level_3'))
+        # heating_rod_on_level3 = heating_rod.get_property_value('level3')
+        # main_set.add(Value(heating_rod_on_level3, name='heating_rod_active_level_3'))
 
         dhw_charging = features.get_feature('heating.dhw.charging').get_property_value('active')
         main_set.add(Value(dhw_charging, name='hot_water_charging'))
