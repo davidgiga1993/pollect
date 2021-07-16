@@ -17,7 +17,7 @@ class OpenhabSource(Source):
         self._url = config.get('url')
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
-        reply = requests.get(self._url + '/rest/items?recursive=true')
+        reply = requests.get(self._url + '/rest/items')
         data = reply.json()
 
         value_set = ValueSet(labels=['name', 'group'])
