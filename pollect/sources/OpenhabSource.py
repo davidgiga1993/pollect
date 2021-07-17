@@ -32,7 +32,10 @@ class OpenhabSource(Source):
             label = re.sub(r'[^a-zA-Z0-9_:]+', '_', label)
 
             state = item.get('state')
-            if item_type == 'Number':
+            if item_type.startswith('Number'):
+                # Number might be formatted, try a simple split by space
+                # to get the number without unit
+                state = state.split(' ')[0]
                 try:
                     number = float(state)
                     value_set.add(Value(number, label_values=[item['name'], group_names], name=label))
