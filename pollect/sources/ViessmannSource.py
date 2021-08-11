@@ -132,7 +132,7 @@ class ViessmannSource(Source):
         main_set.add(Value(dhw_pump_primary, name='hot_water_primary_pump'))
 
         # Settings: Hot water target temperature
-        hot_water_target = features.get_feature('heating.dhw.temperature').get_property_value('value')
+        hot_water_target = features.get_feature('heating.dhw.temperature.main').get_property_value('value')
         main_set.add(Value(hot_water_target, name='hot_water_target_temp'))
 
         # Temperature profiles
