@@ -72,13 +72,15 @@ class ViessmannSource(Source):
         main_set.add(Value(secondary_temp_supply, name='secondary_supply_temp'))
 
         compressor_phase = features.get_feature('heating.compressors.0').get_property_value('phase')
-        main_set.add(Value(compressor_phase != 'off', name='compressor_active'))
+        main_set.add(Value(compressor_phase != 'off' and compressor_phase != 'pause', name='compressor_active'))
 
         compressor_phase_set = ValueSet(labels=['phase'])
         compressor_phase_set.add(Value(compressor_phase == 'cooling',
                                        name='compressor_phase', label_values=['cooling']))
         compressor_phase_set.add(Value(compressor_phase == 'heating',
                                        name='compressor_phase', label_values=['heating']))
+        compressor_phase_set.add(Value(compressor_phase == 'pause',
+                                       name='compressor_phase', label_values=['pause']))
 
         compressor_stats = features.get_feature('heating.compressors.0.statistics')
         comp_starts = compressor_stats.get_property_value('starts')
