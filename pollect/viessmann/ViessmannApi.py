@@ -296,6 +296,15 @@ class ViessmannApi:
         self._exec(method, href, data)
         # const result: Either<string, boolean> = await client.executeAction('heating.circuits.0.operating.programs.comfort', 'setTemperature', {targetTemperature: 22});
 
+    def execute_command(self, install_id: int, gateway_serial: str, device_id: str, feature_name: str,
+                        command_name: str, body: dict):
+        path = f'/v1/equipment/installations/{install_id}/gateways/{gateway_serial}/devices/{device_id}/features/{feature_name}'
+        reply = self._exec('post', ViessmannApi.API_URL + path, {
+            'commandName': command_name,
+            'commandBody': body
+        })
+        return reply
+
     def _get(self, path: str) -> Dict[str, any]:
         """
         Calls the API at the given path
