@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='pollect',
-    version='1.0.2',
+    version='1.1.0',
     author='davidgiga1993',
     author_email='david@dev-core.org',
     description='Metrics collection daemon (similar to collectd)',
@@ -13,6 +13,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/davidgiga1993/pollect',
     packages=setuptools.find_packages(),
+    python_requires='>3.6',
     install_requires=['schedule'],
     entry_points={
         'console_scripts': ['pollect=pollect.Pollect:main'],

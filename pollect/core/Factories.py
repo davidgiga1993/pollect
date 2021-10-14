@@ -2,48 +2,64 @@ import os
 from os import listdir
 from os.path import isfile
 
-from pollect.sources import Log
+from pollect.core.Log import Log
 from pollect.sources.Source import Source
 from pollect.writers.Writer import Writer, DryRunWriter
 
 
-class ObjectFactory:
+class ObjectFactory(Log):
     """
     Generic factory for creating objects
     """
 
-    def __init__(self, module_name: str):
-        self._module = module_name
+    def __init__(self, base_name: str):
+        super().__init__()
+        self._base_module = base_name
         self._modules = self._get_modules()
 
-    def create(self, class_name, *init_args):
-        for module_obj in self._modules:
-            try:
-                class_obj = getattr(module_obj, class_name)
-            except AttributeError:
-                continue
-            return class_obj(*init_args)
-        raise AttributeError('Class ' + class_name + ' not found in module ' + self._module + ' - missing import?')
+    def create(self, class_name: str, *init_args):
+        class_obj = self._get_class_obj(class_name)
+        if class_obj is None:
+            raise AttributeError(f'Class {class_name} not found in module {self._base_module} - missing import?')
+        return class_obj(*init_args)
 
     def _get_modules(self):
         """
         Returns all modules which contains the given class
         """
-        base = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', self._module))
+        base = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..', self._base_module))
         files = [f for f in listdir(base) if isfile(os.path.join(base, f)) and f.endswith('.py')]
         modules = []
         for file in files:
             try:
                 file = file[:-3]
-                modules.append(self._import('pollect.' + self._module + '.' + file))
+                modules.append(self._import('pollect.' + self._base_module + '.' + file))
             except ImportError as e:
-                Log.warning('Could not import {}: {}'.format(file, str(e)))
+                self.log.debug('Could not import {}: {}'.format(file, str(e)))
                 continue
         return modules
 
     @staticmethod
     def _import(package_name: str):
         return __import__(package_name, fromlist=[package_name])
+
+    def _get_class_obj(self, class_name: str):
+        if '.' in class_name:
+            # The class specifies an absolute package import
+            module_obj = self._import(class_name)
+            # The class name must be the same as the file name (aka package)
+            class_name = class_name.split('.')[-1]
+            try:
+                return getattr(module_obj, class_name)
+            except AttributeError:
+                return None
+
+        for module_obj in self._modules:
+            try:
+                return getattr(module_obj, class_name)
+            except AttributeError:
+                continue
+        return None
 
 
 class SourceFactory:

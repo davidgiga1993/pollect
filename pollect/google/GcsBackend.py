@@ -7,19 +7,20 @@ from typing import List, Dict
 from google.cloud import storage
 from google.cloud.storage import Blob
 
+from pollect.core.Log import Log
 from pollect.google import Helper
 from pollect.google.FileProvider import AppVersionFileProvider
 from pollect.google.MetricsData import MetaMetric
 from pollect.google.StatsParser import StatsParser
 from pollect.google.metrics.AppVersionMetrics import AppVersionMetrics
 from pollect.google.parser.AppVersionParser import AppVersionParser
-from pollect.sources import Log
 
 
-class GcsBackend:
+class GcsBackend(Log):
     TYPE_SEP = '-'
 
     def __init__(self, data, apps):
+        super().__init__()
         self._bucket_name = data.get('bucketName')
         self._apps = apps
         self._db_dir = data.get('dbDir', 'db')
@@ -82,7 +83,7 @@ class GcsBackend:
                 assert isinstance(blob, Blob)
                 if self._last_modified is None or self._last_modified != blob.updated:
                     # The file has been changed
-                    Log.info('Downloading stats: ' + file_name)
+                    self.log.info('Downloading stats: ' + file_name)
                     self._last_modified = blob.updated
                     blob.download_to_filename(os.path.join(self._db_dir, file_name))
 
@@ -102,7 +103,7 @@ class GcsBackend:
                 return int(first.group(1)) - int(second.group(1))
             return 0
 
-        Log.info('Downloading latest crash reports')
+        self.log.info('Downloading latest crash reports')
         metrics = {}
         for metric in self._crash_metrics:
             files = metric.file_provider.get_all()

@@ -4,16 +4,17 @@ import struct
 from abc import abstractmethod
 from typing import List
 
+from pollect.core.Log import Log
 from pollect.core.ValueSet import ValueSet
-from pollect.sources import Log
 
 
-class Writer:
+class Writer(Log):
     """
     General writer
     """
 
     def __init__(self, config):
+        super().__init__()
         self.config = config
 
     @abstractmethod
@@ -58,7 +59,7 @@ class DryRunWriter(Writer):
 
     def write(self, data: List[ValueSet]):
         list_items = '\n###\n'.join([str(value_set) for value_set in data])
-        Log.info('[{}] Would write {}'.format(self._name, list_items))
+        self.log.info('[{}] Would write {}'.format(self._name, list_items))
 
 
 class GraphiteWriter(Writer):
@@ -78,7 +79,7 @@ class GraphiteWriter(Writer):
         try:
             self.socket.connect((self.host, self.port))
         except ConnectionRefusedError as e:
-            Log.error('Could not connect to graphite pickle port')
+            self.log.error('Could not connect to graphite pickle port')
             raise e
 
     def stop(self):
@@ -92,9 +93,9 @@ class GraphiteWriter(Writer):
         try:
             self.socket.sendall(message)
         except BrokenPipeError as e:
-            Log.error('Tcp pipe broken - reconnecting')
+            self.log.error('Tcp pipe broken - reconnecting')
             if self._retry == 5:
-                Log.error('Could not send data after 5 retries - terminating now')
+                self.log.error('Could not send data after 5 retries - terminating now')
                 raise e
 
             self._retry += 1

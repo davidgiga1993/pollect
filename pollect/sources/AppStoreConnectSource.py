@@ -5,7 +5,6 @@ from typing import Optional, List, Dict
 from appstoreconnect.api import APIError
 
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.sources import Log
 from pollect.sources.Source import Source
 from appstoreconnect import Api
 
@@ -47,7 +46,7 @@ class AppStoreConnectSource(Source):
         self._db_dir = config.get('dbDir', 'db')
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
-        Log.info('Downloading AppStore report...')
+        self.log.info('Downloading AppStore report...')
         report_file = os.path.join(self._db_dir, 'report_' + self._vendor + '.csv')
 
         # The latest report is always 1 day old

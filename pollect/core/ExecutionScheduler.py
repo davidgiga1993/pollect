@@ -1,8 +1,9 @@
 import time
+from typing import List
 
 import schedule
 
-from pollect.core.Core import Configuration
+from pollect.core.Core import Configuration, Executor
 
 
 class ExecutionScheduler:
@@ -10,20 +11,9 @@ class ExecutionScheduler:
     Schedules the executors
     """
 
-    def __init__(self, config: Configuration, executors):
+    def __init__(self, config: Configuration, executors: List[Executor]):
         self.config = config
         self.executors = executors
-
-    def run(self):
-        """
-        Starts the scheduling
-        """
-
-        # Run them all once at the beginning
-        schedule.run_all()
-        while True:
-            schedule.run_pending()
-            time.sleep(10)
 
     def create(self):
         """
@@ -35,5 +25,17 @@ class ExecutionScheduler:
                 # Use global tick time
                 schedule.every(self.config.tick_time).seconds.do(executor.execute)
                 continue
+
             # Executor has its own tick time defined
             schedule.every(exec_time).seconds.do(executor.execute)
+
+    def run(self):
+        """
+        Starts the scheduling
+        """
+
+        # Run them all once at the beginning
+        schedule.run_all()
+        while True:
+            schedule.run_pending()
+            time.sleep(10)
