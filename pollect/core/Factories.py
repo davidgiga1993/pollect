@@ -2,17 +2,18 @@ import os
 from os import listdir
 from os.path import isfile
 
-from pollect.sources import Log
+from pollect.core.Log import Log
 from pollect.sources.Source import Source
 from pollect.writers.Writer import Writer, DryRunWriter
 
 
-class ObjectFactory:
+class ObjectFactory(Log):
     """
     Generic factory for creating objects
     """
 
     def __init__(self, module_name: str):
+        super().__init__()
         self._module = module_name
         self._modules = self._get_modules()
 
@@ -37,7 +38,7 @@ class ObjectFactory:
                 file = file[:-3]
                 modules.append(self._import('pollect.' + self._module + '.' + file))
             except ImportError as e:
-                Log.warning('Could not import {}: {}'.format(file, str(e)))
+                self.log.debug('Could not import {}: {}'.format(file, str(e)))
                 continue
         return modules
 

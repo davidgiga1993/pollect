@@ -1,14 +1,23 @@
+from __future__ import annotations
+
 import time
 import traceback
+from typing import List, Dict, Optional
 
 from pollect.core.Factories import WriterFactory, SourceFactory
-from pollect.sources import Log
+from pollect.core.Log import Log
 from pollect.sources.Source import Source
+from pollect.writers.Writer import Writer
 
 
 class Configuration:
     """
     General configuration
+    """
+
+    writer: Optional[Writer] = None
+    """
+    Global data writer which should be used by default
     """
 
     def __init__(self, config, dry_run: bool = False):
@@ -21,12 +30,7 @@ class Configuration:
         """
 
         self.writer_factory = WriterFactory(dry_run)
-        self.writer = None
-        """
-        Global data writer which should be used by default
-        
-        :type writer: Writer
-        """
+
         writer_config = self.config.get('writer')
         if writer_config is not None:
             self.writer = self.writer_factory.create(writer_config)
@@ -42,27 +46,31 @@ class Configuration:
         return executors
 
 
-class Executor:
-    def __init__(self, exec_config, global_config: Configuration):
+class Executor(Log):
+    """
+    Executes probes
+    """
+
+    config: Dict[str, any]
+    writer: Writer
+    tick_time: int = 0
+    collection_name: str
+    global_config: Configuration
+
+    _sources: List[Source] = []
+    """
+    List of all sources which should be probed
+    """
+
+    def __init__(self, exec_config: Dict[str, any], global_config: Configuration):
+        super().__init__()
         self.config = exec_config
         self.tick_time = int(self.config.get('tickTime', 0))
         self.collection_name = exec_config.get('collection')
         self.global_config = global_config
-        self.writer = None
-        """
-        Data writer which should be used for this executor
-        
-        :type writer: Writer
-        """
-
         self._sources = []
-        """
-        List of all sources which should be probed
-        
-        :type sources: List[Source]
-        """
 
-    def create_writer(self, writer, writer_factory):
+    def create_writer(self, writer: Optional[Writer], writer_factory: WriterFactory):
         writer_config = self.config.get('writer')
         if writer_config is None and writer is None:
             raise KeyError('No global or local writer configuration not found')
@@ -96,18 +104,18 @@ class Executor:
         # Probe the actual data
         for source in self._sources:
             assert isinstance(source, Source)
-            Log.info('Collecting data from ' + str(source))
+            self.log.info(f'Collecting data from {source}')
             now = int(time.time())
             try:
                 value_sets = source.probe()
                 delta = int(time.time()) - now
                 if delta > 10:
-                    Log.warning('Probing of ' + str(source) + ' took ' + str(delta) + ' seconds')
+                    self.log.warning(f'Probing of {source} took {delta} seconds')
 
             except Exception as e:
                 # Catch all errors that could occur and ignore them
                 traceback.print_exc()
-                Log.error('Error while probing using source ' + str(source) + ': ' + str(e))
+                self.log.error(f'Error while probing using source {source}: {e}')
                 continue
             if value_sets is None:
                 continue
@@ -121,5 +129,5 @@ class Executor:
             return
 
         # Write the data
-        Log.info('Writing data...')
+        self.log.info('Writing data...')
         self.writer.write(data)

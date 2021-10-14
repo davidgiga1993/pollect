@@ -26,7 +26,7 @@ class ViessmannSource(Source):
         try:
             self._auth.get_token()
         except ValueError:
-            Log.warning('Did not find any auth token, starting manually authorization flow')
+            self.log.warning('Did not find any auth token, starting manually authorization flow')
             self._auth.authorize()
 
         main_set = ValueSet()

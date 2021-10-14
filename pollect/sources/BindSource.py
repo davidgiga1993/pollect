@@ -4,7 +4,6 @@ from xml.etree import ElementTree
 
 from pollect.core import Helper
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.sources import Log
 from pollect.sources.Source import Source
 
 
@@ -26,7 +25,7 @@ class BindSource(Source):
         try:
             xml_data = Helper.get_url(self.url)
         except URLError as e:
-            Log.error('Could not connect to bind statistics: ' + str(e))
+            self.log.error('Could not connect to bind statistics: ' + str(e))
             return None
 
         file = XmlFile(xml_data)
@@ -59,7 +58,7 @@ class BindSource(Source):
                 name = file.get_elem('.//name', root=rrset).text.replace('!', '')
                 value = file.get_elem('.//counter', root=rrset).text
                 data.add(Value(int(value), name=low_view_name + '.cache.rrsets',
-                                     label_values=[name.lower()]))
+                               label_values=[name.lower()]))
 
         if self._last_time is not None:
             # Calculate delta for counter values

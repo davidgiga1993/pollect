@@ -1,26 +1,33 @@
+from __future__ import annotations
+
 import os
 import time
+import typing
 from abc import abstractmethod
 from typing import Optional, List
 
 from pollect.core import OSEnv, Helper
+from pollect.core.Log import Log
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.sources import Log
+
+if typing.TYPE_CHECKING:
+    from pollect.core.Core import Configuration
 
 
-class Source:
+class Source(Log):
     type: str = None
+
     name: Optional[str] = None
+    """
+    Name of this source, may be used as value name prefix
+    """
+
+    global_conf: Configuration
 
     def __init__(self, config):
+        super().__init__(config['type'])
         self.name = config.get('name')
         self.type = config['type']
-        self.global_conf = None
-        """
-        Global configuration
-
-        :type global_conf: Configuration
-        """
 
     def setup(self, global_conf):
         """
@@ -80,7 +87,7 @@ class HttpSource(Source):
             end = time.time() * 1000
             data.add(Value(int(end - start)))
         except Exception as e:
-            Log.error('Could not probe ' + str(e))
+            self.log.error('Could not probe ' + str(e))
             data.add(Value(self.timeout))
         return data
 
