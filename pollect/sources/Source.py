@@ -72,6 +72,9 @@ class Source(Log):
             return self.type
         return self.type + '.' + self.name
 
+    def __str__(self):
+        return self._get_suffix()
+
 
 class HttpSource(Source):
     def __init__(self, config):
