@@ -122,7 +122,10 @@ class Executor(Log):
 
             for value_set in value_sets:
                 value_set.time = now
-                value_set.name = self.collection_name + '.' + value_set.name
+                if len(value_set.name) > 0:
+                    value_set.name = self.collection_name + '.' + value_set.name
+                else:
+                    value_set.name = self.collection_name
                 data.append(value_set)
 
         if len(data) == 0:
