@@ -76,6 +76,17 @@ class Source(Log):
         return self._get_suffix()
 
 
+class DummySource(Source):
+    def __init__(self, config):
+        super().__init__(config)
+        self.value = config.get('value')
+
+    def _probe(self) -> Optional[ValueSet]:
+        data = ValueSet()
+        data.add(Value(self.value))
+        return data
+
+
 class HttpSource(Source):
     def __init__(self, config):
         super().__init__(config)

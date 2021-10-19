@@ -7,6 +7,7 @@ from typing import List, Dict, Optional
 from pollect.core.Factories import WriterFactory, SourceFactory
 from pollect.core.Log import Log
 from pollect.sources.Source import Source
+from pollect.sources.helper.ConfigContainer import ConfigContainer
 from pollect.writers.Writer import Writer
 
 
@@ -21,7 +22,7 @@ class Configuration:
     """
 
     def __init__(self, config, dry_run: bool = False):
-        self.config = config
+        self.config = ConfigContainer(config)
         self.tick_time = self.config.get('tickTime', 10)
         """
         Time for a single probe tick in seconds
