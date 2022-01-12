@@ -14,7 +14,7 @@ setuptools.setup(
     url='https://github.com/davidgiga1993/pollect',
     packages=setuptools.find_packages(),
     python_requires='>3.6',
-    install_requires=['schedule'],
+    install_requires=['schedule', 'prometheus-client'],
     entry_points={
         'console_scripts': ['pollect=pollect.Pollect:main'],
     },
