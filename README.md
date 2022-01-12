@@ -3,9 +3,6 @@
 pollect is a daemon for collecting system and application metrics in periodical intervals.
 (similar to collectd). It's designed to require very little dependencies to run.
 
-```
-pip install pollect
-```
 
 # Architecture
 
@@ -19,21 +16,28 @@ By default the tick time is defined globally, but can be changed on a executor l
 # Usage
 
 ```bash
+pip install pollect
 pollect --config config.json [--dry-run]
 ```
+
+## Docker
+Place your `config.json` and any custom `sources` into your working directory and run
+```bash
+docker run -v $(pwd):/pollect -p 8000:8000 davidgiga1993/pollect:latest
+```
+
 
 # Config
 
 Here is an example for collecting the load average every 30 seconds as well as sampling the response time of google
-every 2 min and persisting it in graphite:
+every 2 min and exporting it as prometheus metrics
 
 ```json
 {
   "tickTime": 30,
   "writer": {
-	"type": "Graphite",
-	"picklePort": 2004,
-	"host": "localhost"
+	"type": "Prometheus",
+	"port": 8000
   },
   "executors": [
 	{
@@ -56,12 +60,6 @@ every 2 min and persisting it in graphite:
 	}
   ]
 }
-```
-
-Output:
-
-```
-('pollect.loadavg.mid', (1508478781, 0.01)), ('pollect.loadavg.short', (1508478781, 0.0)), ('pollect.loadavg.long', (1508478781, 0.0)
 ```
 
 A more advanced configuration sample can be found in the `pollect.json` file.
@@ -322,7 +320,7 @@ This example shows how to add your own collectors
 
 ## Source
 
-sources/MyAppSource.py:
+extensions/SingleRandom.py:
 
 ```python
 # Single random value with parameter
@@ -334,7 +332,10 @@ class SingleRandomSource(Source):
     def _probe(self):
         return random() * self.max
 
+```
 
+extensions/MultiRandomSource.py:
+```python
 # Multiple random values
 class MultiRandomSource(Source):
     def _probe(self):
@@ -346,11 +347,11 @@ config.json:
 ```json
 "sources": [
 {
-"type": "SingleRandom",
+"type": "extensions.SingleRandom",
 "max": 100
 },
 {
-"type": "MultiRandom"
+"type": "extensions.MultiRandom"
 }
 ]
 ```
