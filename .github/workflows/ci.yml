@@ -70,7 +70,7 @@ jobs:
 
   docker:
     needs: build
-    #if: github.event_name == 'release' && github.event.action == 'created'
+    if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE: davidgiga1993/pollect
@@ -98,8 +98,7 @@ jobs:
           # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
+            type=ref,event=tag
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
