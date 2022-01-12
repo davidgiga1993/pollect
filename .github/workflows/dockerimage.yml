@@ -1,0 +1,34 @@
+name: Docker Image CI
+
+on: 
+  release: 
+    types: [published]
+  push:
+    branches:
+      - docker
+jobs: 
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE: davidgiga1993/pollect
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Get the version
+        id: vars
+        run: echo ::set-output name=SOURCE_TAG::${GITHUB_REF#refs/tags/}
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v2.2.2
+        with:
+          push: true
+          tags: 
+            - ${{DOCKER_IMAGE}}:latest
+            - ${{DOCKER_IMAGE}}:${{steps.vars.outputs.SOURCE_TAG}}
