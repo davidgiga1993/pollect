@@ -3,15 +3,26 @@
 pollect is a daemon for collecting system and application metrics in periodical intervals.
 (similar to collectd). It's designed to require very little dependencies to run.
 
-
 # Architecture
+
+```
+ ------------                           ----------
+ | executor |  -- result of sources --> | writer |
+ ------------                           ----------
+       1
+       | Calls sources to probe data
+       n
+ ---------------                                   
+ |   source    |   
+ ---------------
+```
 
 pollect uses `executors` which contain `sources` for probing the data. The data is exported using the `collection` name.
 
 For persisting the data `writers` are used. They can be defined globally (for all executors)
 or on a per executor level.
 
-By default the tick time is defined globally, but can be changed on a executor level.
+By default, the tick time is defined globally, but can be changed on a executor level.
 
 # Usage
 
@@ -21,11 +32,12 @@ pollect --config config.json [--dry-run]
 ```
 
 ## Docker
+
 Place your `config.json` and any custom `sources` into your working directory and run
+
 ```bash
 docker run -v $(pwd):/pollect -p 8000:8000 davidgiga1993/pollect:latest
 ```
-
 
 # Config
 
@@ -35,6 +47,7 @@ every 2 min and exporting it as prometheus metrics
 ```json
 {
   "tickTime": 30,
+  "threads": 4,
   "writer": {
 	"type": "Prometheus",
 	"port": 8000
@@ -218,10 +231,8 @@ the [homematicip](https://homematicip-rest-api.readthedocs.io/en/latest/gettings
 
 ## TP-LINK EAP `TpLinkEap`
 
-Collects wifi statistics of the TP-LINK EAP series devices.
-This uses the rest api of the device.
-Note that the devices only support one session at a time, meaning you will be logged out from the
-web UI in regular intervals.
+Collects wifi statistics of the TP-LINK EAP series devices. This uses the rest api of the device. Note that the devices
+only support one session at a time, meaning you will be logged out from the web UI in regular intervals.
 
 | Param    | Desc                |
 |----------|---------------------|
@@ -229,11 +240,10 @@ web UI in regular intervals.
 | user     | Username            |
 | password | Password            |
 
-
 ## Openhab `Openhab`
 
-Collects the values of all channels of all items in openhab.
-This contains more data than the original metrics exporter of openhab (since it doesn't include all items). 
+Collects the values of all channels of all items in openhab. This contains more data than the original metrics exporter
+of openhab (since it doesn't include all items).
 
 | Param | Desc           |
 |-------|----------------|
@@ -299,10 +309,6 @@ A writer represents the destination where the collected data is written to.
 
 Prints the collected data to the stdout
 
-## Graphite `Graphite`
-
-Sends data in the pickle format to graphite. Make sure to define the correct pickle port.
-
 ## Prometheus http exporter `Prometheus`
 
 Exports the data via a prometheus endpoint. The port can be configured using
@@ -314,6 +320,12 @@ Exports the data via a prometheus endpoint. The port can be configured using
     "port": 9001
 }
 ```
+
+# Multithreading
+
+By default, pollect executes all sources of a collection in parallel with up to 5 threads. If the writer supports
+partial writes (for example `prometheus`) the result of each source will be immediately available. Writers which do not
+support partial writes will receive the data once all probes have completed.
 
 # Extensions
 
@@ -336,6 +348,7 @@ class SingleRandomSource(Source):
 ```
 
 extensions/MultiRandomSource.py:
+
 ```python
 # Multiple random values
 class MultiRandomSource(Source):

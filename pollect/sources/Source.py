@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import typing
 from abc import abstractmethod
+from time import sleep
 from typing import Optional, List
 
 from pollect.core import OSEnv
@@ -79,8 +80,11 @@ class DummySource(Source):
     def __init__(self, config):
         super().__init__(config)
         self.value = config.get('value')
+        self.sleep = config.get('sleep', 0)
 
     def _probe(self) -> Optional[ValueSet]:
+        if self.sleep > 0:
+            sleep(self.sleep)
         data = ValueSet()
         data.add(Value(self.value))
         return data
