@@ -1,4 +1,6 @@
+from typing import Optional
 from urllib import request
+from urllib.error import HTTPError
 
 
 def remove_empty_list(list_obj):
@@ -18,6 +20,11 @@ def accept(include, exclude, value):
     return True
 
 
-def get_url(url, timeout: int = 5):
-    with request.urlopen(url, timeout=timeout) as url:
-        return url.read()
+def get_url(url, timeout: int = 5, expected_status: Optional[int] = None):
+    try:
+        with request.urlopen(url, timeout=timeout) as url:
+            return url.read()
+    except HTTPError as e:
+        if expected_status == e.status:
+            return e.read()
+        raise e

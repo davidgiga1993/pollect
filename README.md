@@ -73,18 +73,19 @@ Certain sources might need additional dependencies.
 
 The following parameters are available for all sources:
 
-| Param | Desc |
-| --- | --- |
-| name | Name of the metric (prefix) |
+| Param | Desc                        |
+|-------|-----------------------------|
+| name  | Name of the metric (prefix) |
 
 ## Http response time `Http`
 
 Measures the http response time
 
-| Param | Desc |
-| --- | --- |
-| url | Url to the web service |
-| timeout | Timeout in seconds (default 15) |
+| Param      | Desc                                             |
+|------------|--------------------------------------------------|
+| url        | Url to the web service                           |
+| timeout    | Timeout in seconds (default 15)                  |
+| statusCode | The expected status code (default any non error) |
 
 ## Disk usage `DiskUsage`
 
@@ -102,47 +103,47 @@ System memory usage. Requires `psutil` package
 
 Information about one or more processes
 
-| Param | Desc |
-| --- | --- |
-| name | Name of the metric |
-| procRegex| Name of the process(es) - Regex |
-| memory | True to enable memory metrics (default true) |
-| load| True to enable cpu load metrics (default true)  |
+| Param     | Desc                                           |
+|-----------|------------------------------------------------|
+| name      | Name of the metric                             |
+| procRegex | Name of the process(es) - Regex                |
+| memory    | True to enable memory metrics (default true)   |
+| load      | True to enable cpu load metrics (default true) |
 
 ## Interface `Interface`
 
 Collects NIC statistics. Requires `psutil` package
 
-| Param | Desc |
-| --- | --- |
-| includeTotal | Enables incremental counter data |
-| include | Explicitly includes nics. Can be empty |
-| exclude | Excludes nics. Can be empty |
+| Param        | Desc                                   |
+|--------------|----------------------------------------|
+| includeTotal | Enables incremental counter data       |
+| include      | Explicitly includes nics. Can be empty |
+| exclude      | Excludes nics. Can be empty            |
 
 ## IO `IO`
 
 Collects IO statistics. Requires `psutil` package
 
-| Param | Desc |
-| --- | --- |
+| Param   | Desc                                    |
+|---------|-----------------------------------------|
 | include | Explicitly includes disks. Can be empty |
-| exclude | Excludes disks. Can be empty |
+| exclude | Excludes disks. Can be empty            |
 
 ## HDD smart data `SmartCtl`
 
 Wrapper for the linux `smartctl` tool. Collects SMART data
 
-| Param | Desc |
-| --- | --- |
-| attributes | Name of smart attributes which should be included |
-| devices | List of regex for matching disks which should be included |
+| Param      | Desc                                                      |
+|------------|-----------------------------------------------------------|
+| attributes | Name of smart attributes which should be included         |
+| devices    | List of regex for matching disks which should be included |
 
 ## Sensors `Sensors`
 
 Wrapper for the linux `sensors` utility. Collects sensor data such as temps and voltages
 
-| Param | Desc |
-| --- | --- |
+| Param   | Desc                                                 |
+|---------|------------------------------------------------------|
 | include | Name of chips which should be included. Can be empty |
 | exclude | Name of chips which should be excluded. Can be empty |
 
@@ -150,9 +151,9 @@ Wrapper for the linux `sensors` utility. Collects sensor data such as temps and 
 
 Bind DNS server statistics.
 
-| Param | Desc |
-| --- | --- |
-| url | URL to the bind statistics |
+| Param | Desc                           |
+|-------|--------------------------------|
+| url   | URL to the bind statistics     |
 | views | Views which should be included |
 
 ## SNMP `SnmpGet`
@@ -184,9 +185,9 @@ Wrapper for the snmpget binary.
 
 Collects plex mediaserver statistics. This requires local IP addresses to be allowed without authentication.
 
-| Param | Desc |
-| --- | --- |
-| url | URL to plex. Use the IP of the NIC instead of `localhost` |
+| Param | Desc                                                      |
+|-------|-----------------------------------------------------------|
+| url   | URL to plex. Use the IP of the NIC instead of `localhost` |
 
 ## Fritzbox WAN `Fritzbox`
 
@@ -197,10 +198,10 @@ the [fritzconnection](https://pypi.org/project/fritzconnection) package.
 
 Collects sensor data from viessmann heatpumps
 
-| Param | Desc |
-| --- | --- |
-| user | Username of viessmann account |
-| password | Password of account |
+| Param    | Desc                          |
+|----------|-------------------------------|
+| user     | Username of viessmann account |
+| password | Password of account           |
 
 These information are only required for the first data collection. Afterwards a `viessmann_token.json` file is created
 to cache the oauth credentials.
@@ -210,9 +211,9 @@ to cache the oauth credentials.
 Collects temperature and humidity data from homematic IP. Requires
 the [homematicip](https://homematicip-rest-api.readthedocs.io/en/latest/gettingstarted.html#installation) package.
 
-| Param | Desc |
-| --- | --- |
-| authToken | Auth token |
+| Param       | Desc            |
+|-------------|-----------------|
+| authToken   | Auth token      |
 | accessPoint | Access point id |
 
 ## TP-LINK EAP `TpLinkEap`
@@ -222,11 +223,11 @@ This uses the rest api of the device.
 Note that the devices only support one session at a time, meaning you will be logged out from the
 web UI in regular intervals.
 
-| Param | Desc |
-| --- | --- |
-| url | URL to the admin UI |
-| user | Username  |
-| password | Password |
+| Param    | Desc                |
+|----------|---------------------|
+| url      | URL to the admin UI |
+| user     | Username            |
+| password | Password            |
 
 
 ## Openhab `Openhab`
@@ -234,19 +235,19 @@ web UI in regular intervals.
 Collects the values of all channels of all items in openhab.
 This contains more data than the original metrics exporter of openhab (since it doesn't include all items). 
 
-| Param | Desc |
-| --- | --- |
-| url | URL to openhab |
+| Param | Desc           |
+|-------|----------------|
+| url   | URL to openhab |
 
 ## Audi MMI `MMI`
 
 Connects to the audi MMI backend and collects data. Requires the [audi api](https://github.com/davidgiga1993/AudiAPI)
 package. Note: This pacakge is currently broken due to API changes.
 
-| Param | Desc |
-| --- | --- |
-| credentials | Path to the credentials.json |
-| vin | VIN of the car that should be crawled |
+| Param       | Desc                                  |
+|-------------|---------------------------------------|
+| credentials | Path to the credentials.json          |
+| vin         | VIN of the car that should be crawled |
 
 ## Google Play Developer Console `Gdc`
 

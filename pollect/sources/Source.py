@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import os
-import time
 import typing
 from abc import abstractmethod
 from typing import Optional, List
 
-from pollect.core import OSEnv, Helper
+from pollect.core import OSEnv
 from pollect.core.Log import Log
 from pollect.core.ValueSet import ValueSet, Value
 
@@ -84,25 +83,6 @@ class DummySource(Source):
     def _probe(self) -> Optional[ValueSet]:
         data = ValueSet()
         data.add(Value(self.value))
-        return data
-
-
-class HttpSource(Source):
-    def __init__(self, config):
-        super().__init__(config)
-        self.url = config.get('url')
-        self.timeout = config.get('timeout', 10)
-
-    def _probe(self):
-        data = ValueSet()
-        try:
-            start = time.time() * 1000
-            Helper.get_url(self.url, timeout=self.timeout)
-            end = time.time() * 1000
-            data.add(Value(int(end - start)))
-        except Exception as e:
-            self.log.error('Could not probe ' + str(e))
-            data.add(Value(self.timeout))
         return data
 
 
