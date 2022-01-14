@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='pollect',
-    version='1.1.3',
+    version='1.1.4',
     author='davidgiga1993',
     author_email='david@dev-core.org',
     description='Metrics collection daemon (similar to collectd)',
