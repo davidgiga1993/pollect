@@ -1,6 +1,3 @@
-import pickle
-import socket
-import struct
 from abc import abstractmethod
 from typing import List
 
@@ -16,6 +13,14 @@ class Writer(Log):
     def __init__(self, config):
         super().__init__()
         self.config = config
+
+    def supports_partial_write(self) -> bool:
+        """
+        Indicates if the writer supports writing values in segments.
+        If true, the write method will be called multiple times until all values have been set
+        :return: Partial write support
+        """
+        return False
 
     @abstractmethod
     def start(self):
@@ -51,6 +56,9 @@ class DryRunWriter(Writer):
         super().__init__(None)
         self._name = name
 
+    def supports_partial_write(self) -> bool:
+        return True
+
     def stop(self):
         pass
 
@@ -62,48 +70,6 @@ class DryRunWriter(Writer):
         self.log.info('[{}] Would write {}'.format(self._name, list_items))
 
 
-class GraphiteWriter(Writer):
-    """
-    Graphite pickle TCP writer
-    """
-
-    def __init__(self, config):
-        super().__init__(config)
-        self.host = config.get('host')
-        self.port = config.get('picklePort')
-        self.socket = None
-        self._retry = 0
-
-    def start(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.socket.connect((self.host, self.port))
-        except ConnectionRefusedError as e:
-            self.log.error('Could not connect to graphite pickle port')
-            raise e
-
-    def stop(self):
-        if self.socket is not None:
-            self.socket.close()
-
-    def write(self, data):
-        payload = pickle.dumps(data, protocol=2)
-        header = struct.pack("!L", len(payload))
-        message = header + payload
-        try:
-            self.socket.sendall(message)
-        except BrokenPipeError as e:
-            self.log.error('Tcp pipe broken - reconnecting')
-            if self._retry == 5:
-                self.log.error('Could not send data after 5 retries - terminating now')
-                raise e
-
-            self._retry += 1
-            self.start()
-            self.write(data)
-            self._retry = 0
-
-
 class InMemoryWriter(Writer):
     """
     Appends data to a list
@@ -112,6 +78,7 @@ class InMemoryWriter(Writer):
     def __init__(self, config):
         super().__init__(config)
         self.data = []
+        self.write_calls = 0
 
     def start(self):
         pass
@@ -120,4 +87,11 @@ class InMemoryWriter(Writer):
         pass
 
     def write(self, data):
+        self.write_calls += 1
         self.data.append(data)
+
+
+class ParallelInMemoryWriter(InMemoryWriter):
+
+    def supports_partial_write(self) -> bool:
+        return True

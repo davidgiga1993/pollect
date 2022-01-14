@@ -9,9 +9,11 @@ from pollect.writers.Writer import Writer
 class PrometheusWriter(Writer):
     def __init__(self, config):
         super().__init__(config)
-        self._init = False
         self._port = self.config.get('port', 8080)
         self._exporters = {}
+
+    def supports_partial_write(self) -> bool:
+        return True
 
     def start(self):
         start_http_server(self._port)
