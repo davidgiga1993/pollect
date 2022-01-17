@@ -19,7 +19,7 @@ class Value:
             self.value = value  # type: float
 
         self.name = name  # type: Optional[str]
-        self.label_values = label_values  # type: Optional[List[str]]
+        self.label_values = [] if label_values is None else label_values  # type: List[str]
 
     def __repr__(self):
         return str(self.value) + ' (' + str(self.name) + ', ' + str(self.label_values) + ')'

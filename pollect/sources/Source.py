@@ -27,6 +27,7 @@ class Source(Log):
     def __init__(self, config):
         super().__init__(config['type'])
         self.name = config.get('name')
+        self.labels = config.get('labels', {})
         self.type = config['type']
 
     def setup(self, global_conf):
@@ -51,6 +52,12 @@ class Source(Log):
             results = [results]
         for result in results:
             result.name = self._get_suffix()
+
+            # add static labels from config
+            result.labels.extend(self.labels.keys())
+            for value in result.values:
+                value.label_values.extend(self.labels.values())
+
         return results
 
     @abstractmethod

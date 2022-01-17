@@ -17,6 +17,12 @@ class ConfigContainer:
     def __getitem__(self, item):
         return self.get(item, required=True)
 
+    def keys(self):
+        return self._data.keys()
+
+    def values(self):
+        return self._data.values()
+
     def get(self, key: str, default: any = None, required: bool = False) -> Optional[any]:
         if key not in self._data:
             if required:
