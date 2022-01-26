@@ -69,7 +69,10 @@ every 2 min and exporting it as prometheus metrics
 	  "sources": [
 		{
 		  "type": "Http",
-		  "url": "https://google.com"
+		  "url": "https://google.com",
+		  "labels": {
+			"system": "prod"
+		  }
 		}
 	  ]
 	}
@@ -100,9 +103,10 @@ Certain sources might need additional dependencies.
 
 The following parameters are available for all sources:
 
-| Param | Desc                        |
-|-------|-----------------------------|
-| name  | Name of the metric (prefix) |
+| Param  | Desc                        |
+|--------|-----------------------------|
+| name   | Name of the metric (prefix) |
+| labels | Dict of static labels       |
 
 ## Http response time `Http`
 
