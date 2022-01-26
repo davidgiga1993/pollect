@@ -31,9 +31,9 @@ class ConfigContainer:
             return default
 
         value = self._data[key]
-        return self._resolve(value)
+        return self._resolve(value, key)
 
-    def _resolve(self, value: any):
+    def _resolve(self, value: any, key: str = None):
         """
         Resolves any environment references in the given value
         :param value: Value
