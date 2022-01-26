@@ -6,6 +6,22 @@ from pollect.sources.helper.ConfigContainer import ConfigContainer
 
 class TestConfigContainer(TestCase):
 
+    def test_iteration(self):
+        c = ConfigContainer({
+            'key': '${VALUE}',
+            'key2': 'someValue${VALUE}',
+            'key3': {
+                'test': 'other${VALUE}'
+            }
+        })
+        os.environ['VALUE'] = 'hello'
+        values = [x for x in c.values()]
+        self.assertIn('hello', values)
+        self.assertIn('someValuehello', values)
+        child = next((x for x in values if isinstance(x, ConfigContainer)), None)
+        self.assertIsNotNone(child)
+        self.assertIn('otherhello', child.values())
+
     def test_resolve(self):
         c = ConfigContainer({
             'key': '${VALUE}',

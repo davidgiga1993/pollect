@@ -21,7 +21,8 @@ class ConfigContainer:
         return self._data.keys()
 
     def values(self):
-        return self._data.values()
+        for value in self._data.values():
+            yield self._resolve(value)
 
     def get(self, key: str, default: any = None, required: bool = False) -> Optional[any]:
         if key not in self._data:
@@ -30,6 +31,14 @@ class ConfigContainer:
             return default
 
         value = self._data[key]
+        return self._resolve(value)
+
+    def _resolve(self, value: any):
+        """
+        Resolves any environment references in the given value
+        :param value: Value
+        :return: Resolved value
+        """
         if isinstance(value, dict):
             return ConfigContainer(value)
         if isinstance(value, list):
