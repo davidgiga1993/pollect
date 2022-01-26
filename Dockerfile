@@ -9,4 +9,4 @@ RUN pip install *.whl && \
 
 
 ENV PYTHONPATH "${PYTHONPATH}:/pollect"
-CMD ["python", "-m", "pollect.Pollect", "--config", "/pollect/config.json"]
+CMD ["python", "-m", "pollect.Pollect", "--config", "/pollect/config"]
