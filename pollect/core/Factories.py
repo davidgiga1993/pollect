@@ -54,6 +54,7 @@ class ObjectFactory(Log):
             except AttributeError:
                 return None
 
+        # Search for the class in all known modules
         for module_obj in self._modules:
             try:
                 return getattr(module_obj, class_name)

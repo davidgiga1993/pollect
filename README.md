@@ -31,9 +31,11 @@ pip install pollect
 pollect --config config.json [--dry-run]
 ```
 
+Note: You can use either `json` or `yml` files for configuration.
+
 ## Docker
 
-Place your `config.json` and any custom `sources` into your working directory and run
+Place your `config.[json|yml]` and any custom `sources` into your working directory and run
 
 ```bash
 docker run -v $(pwd):/pollect -p 8000:8000 davidgiga1993/pollect:latest
@@ -75,7 +77,19 @@ every 2 min and exporting it as prometheus metrics
 }
 ```
 
-A more advanced configuration sample can be found in the `pollect.json` file.
+A more advanced configuration sample can be found in the `pollect.[json|yml]` file.
+
+# Metric names
+
+The metric names are automatically build out of the collection, source and value name. Example:
+
+Pattern: `${collection}_${sourceType}[_${sourceName}][_$valueName}]`
+
+| Collection | Source type | Source name (optional) | Resulting metric name                                            |
+|------------|-------------|------------------------|------------------------------------------------------------------|
+| pollect    | Http        |                        | pollect_Http                                                     |
+| pollect    | Http        | test                   | pollect_Http_test                                                |
+| pollect    | Process     |                        | pollect_Process_load_percent <br> pollect_Process_virtual_memory |
 
 # Sources
 
