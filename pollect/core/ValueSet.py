@@ -6,19 +6,29 @@ class Value:
     Represents a single value
     """
 
+    value: float = 0
+    """
+    Current value
+    """
+
+    name: Optional[str] = None
+    """
+    Name of this value
+    """
+
     def __init__(self, value: any, label_values: list = None, name: str = None):
         """
         Creates a new value
-        :param value: Value (may be bool or float/int)
+        :param value: Value (might be bool or float/int)
         :param label_values: The label values
         :param name: Name of this specific value, if None the ValueSet name will be used
         """
         if isinstance(value, bool):
             self.value = 1 if value else 0
         else:
-            self.value = value  # type: float
+            self.value = value
 
-        self.name = name  # type: Optional[str]
+        self.name = name
         self.label_values = [] if label_values is None else label_values  # type: List[str]
 
     def __repr__(self):

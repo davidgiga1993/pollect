@@ -16,10 +16,18 @@ if typing.TYPE_CHECKING:
 
 class Source(Log):
     type: str = None
+    """
+    Type string of this source
+    """
 
     name: Optional[str] = None
     """
     Name of this source, may be used as value name prefix
+    """
+
+    labels: typing.Dict[str, str] = {}
+    """
+    Static labels which should be added to all values
     """
 
     global_conf: Configuration
@@ -27,6 +35,7 @@ class Source(Log):
     def __init__(self, config):
         super().__init__(config['type'])
         self.name = config.get('name')
+
         self.labels = config.get('labels', {})
         self.type = config['type']
 
@@ -53,7 +62,7 @@ class Source(Log):
         for result in results:
             result.name = self._get_suffix()
 
-            # add static labels from config
+            # Add static labels from config
             result.labels.extend(self.labels.keys())
             for value in result.values:
                 value.label_values.extend(self.labels.values())
