@@ -10,7 +10,7 @@ from pollect.core.ValueSet import ValueSet
 from pollect.core.Factories import WriterFactory, SourceFactory
 from pollect.core.Log import Log
 from pollect.sources.Source import Source
-from pollect.sources.helper.ConfigContainer import ConfigContainer
+from pollect.core.config.ConfigContainer import ConfigContainer
 from pollect.writers.Writer import Writer
 
 
@@ -109,6 +109,14 @@ class Executor(Log):
             sources.append(source)
         self._sources = sources
 
+    def shutdown(self):
+        """
+        Terminates all sources and writers
+        """
+        for source in self._sources:
+            source.shutdown()
+        self.writer.stop()
+
     def execute(self):
         """
         Probes all data sources and writes the data using the current writer
@@ -128,6 +136,7 @@ class Executor(Log):
         # Wait and merge the results
         data = []
         for future in futures:
+            # noinspection PyTypeChecker
             self._merge(future.result(), data)
         self._write(data)
 
@@ -182,4 +191,7 @@ class Executor(Log):
 
         # Write the data
         self.log.info('Writing data...')
-        self.writer.write(value_sets)
+        try:
+            self.writer.write(value_sets)
+        except Exception as e:
+            self.log.error(f'Could not write data: {e}')

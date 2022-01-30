@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.google.AppConfig import AppConfig
-from pollect.google.GcsBackend import GcsBackend
+from pollect.libs.google.AppConfig import AppConfig
+from pollect.libs.google.GcsBackend import GcsBackend
 from pollect.sources.Source import Source
 
 

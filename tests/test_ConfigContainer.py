@@ -1,7 +1,7 @@
 import os
 from unittest import TestCase
 
-from pollect.sources.helper.ConfigContainer import ConfigContainer
+from pollect.core.config.ConfigContainer import ConfigContainer
 
 
 class TestConfigContainer(TestCase):

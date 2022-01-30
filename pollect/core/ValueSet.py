@@ -16,6 +16,11 @@ class Value:
     Name of this value
     """
 
+    label_values: List[str]
+    """
+    Values for the labels
+    """
+
     def __init__(self, value: any, label_values: list = None, name: str = None):
         """
         Creates a new value
@@ -31,8 +36,35 @@ class Value:
         self.name = name
         self.label_values = [] if label_values is None else label_values  # type: List[str]
 
+    def get_key(self) -> str:
+        """
+        Returns the unique key of this value
+        :return: Key
+        """
+        return self.name + ''.join(self.label_values)
+
     def __repr__(self):
         return str(self.value) + ' (' + str(self.name) + ', ' + str(self.label_values) + ')'
+
+
+class AvgValue:
+    """
+    Calculates the average of multiple values
+    """
+    count: int = 0
+    sum: float = 0
+    base: Value
+
+    def __init__(self, base: Value):
+        self.base = base
+        self.add(base)
+
+    def add(self, value: Value):
+        self.sum += value.value
+        self.count += 1
+
+    def avg(self) -> float:
+        return self.sum / self.count
 
 
 class ValueSet:

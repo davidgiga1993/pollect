@@ -38,7 +38,12 @@ def main():
     if args.debug:
         Log.set_debug()
 
+    scheduler = None
+
     def signal_handler(signal, frame):
+        nonlocal scheduler
+        if scheduler is not None:
+            scheduler.stop()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, signal_handler)

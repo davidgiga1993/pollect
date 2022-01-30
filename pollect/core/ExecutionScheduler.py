@@ -14,6 +14,7 @@ class ExecutionScheduler:
     def __init__(self, config: Configuration, executors: List[Executor]):
         self.config = config
         self.executors = executors
+        self._active = False
 
     def create(self):
         """
@@ -33,9 +34,17 @@ class ExecutionScheduler:
         """
         Starts the scheduling
         """
-
+        self._active = True
         # Run them all once at the beginning
         schedule.run_all()
-        while True:
+        while self._active:
             schedule.run_pending()
             time.sleep(10)
+
+    def stop(self):
+        """
+        Stops the scheduling and terminates all probes
+        """
+        self._active = False
+        for executor in self.executors:
+            executor.shutdown()

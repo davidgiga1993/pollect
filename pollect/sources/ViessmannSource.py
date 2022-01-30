@@ -7,9 +7,8 @@ from __future__ import annotations
 from typing import Optional, List
 
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.sources import Log
 from pollect.sources.Source import Source
-from pollect.viessmann.ViessmannApi import ViessmannApi, ViessmannOauth, Device
+from pollect.libs.viessmann import ViessmannApi, ViessmannOauth, Device
 
 
 class ViessmannSource(Source):

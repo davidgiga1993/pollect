@@ -8,12 +8,12 @@ from google.cloud import storage
 from google.cloud.storage import Blob
 
 from pollect.core.Log import Log
-from pollect.google import Helper
-from pollect.google.FileProvider import AppVersionFileProvider
-from pollect.google.MetricsData import MetaMetric
-from pollect.google.StatsParser import StatsParser
-from pollect.google.metrics.AppVersionMetrics import AppVersionMetrics
-from pollect.google.parser.AppVersionParser import AppVersionParser
+from pollect.libs.google import Helper
+from pollect.libs.google.FileProvider import AppVersionFileProvider
+from pollect.libs.google.MetricsData import MetaMetric
+from pollect.libs.google.StatsParser import StatsParser
+from pollect.libs.google.metrics.AppVersionMetrics import AppVersionMetrics
+from pollect.libs.google.parser.AppVersionParser import AppVersionParser
 
 
 class GcsBackend(Log):

@@ -1,7 +1,7 @@
 from typing import List
 
-from pollect.google.StatsParser import OverviewParser, StatsParser
-from pollect.google.metrics.AppVersionMetrics import AppVersionMetrics
+from pollect.libs.google.StatsParser import OverviewParser, StatsParser
+from pollect.libs.google.metrics.AppVersionMetrics import AppVersionMetrics
 
 
 class AppVersionParser(OverviewParser):
