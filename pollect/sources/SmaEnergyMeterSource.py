@@ -13,7 +13,7 @@ class SmaEnergyMeterSource(Source):
 
     def __init__(self, config):
         super().__init__(config)
-        self._sma = SmaEnergyMeter()
+        self._sma = SmaEnergyMeter(config['hostIp'])
         self._cache = ValueCache()
         self._sma.meterProtocolReceived += self._handle_data
 

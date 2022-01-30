@@ -236,11 +236,12 @@ class SmaEnergyMeter(Log):
     _active: bool = False
     _sock: socket.socket
 
-    def __init__(self):
+    def __init__(self, own_ip: str):
         super().__init__()
         self.deviceFound = Event()
         self.meterProtocolReceived = Event()
         self._parser = MeterProtocolParser()
+        self._own_ip = own_ip
 
     def stop(self):
         self._active = False
@@ -255,10 +256,9 @@ class SmaEnergyMeter(Log):
         except AttributeError:
             pass  # Some systems don't support SO_REUSEPORT
         self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
-        addr = self._get_interface_addr()
-        self._sock.bind((addr, self.PORT))
+        self._sock.bind((self._own_ip, self.PORT))
 
-        self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(addr))
+        self._sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(self._own_ip))
         self._sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP,
                               struct.pack("4sl", socket.inet_aton(self.MCAST_GRP), socket.INADDR_ANY))
 
@@ -282,11 +282,3 @@ class SmaEnergyMeter(Log):
         if len(data) > 600:
             protocol = self._parser.parse(data)
             self.meterProtocolReceived.fire(protocol)
-
-    @staticmethod
-    def _get_interface_addr():
-        interface = socket.gethostbyname_ex(socket.gethostname())
-        for addr in interface[2]:
-            if addr.startswith('192.168.1'):
-                return addr
-        raise ValueError('No valid interface found')
