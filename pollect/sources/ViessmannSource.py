@@ -8,7 +8,7 @@ from typing import Optional, List
 
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.sources.Source import Source
-from pollect.libs.viessmann import ViessmannApi, ViessmannOauth, Device
+from pollect.libs.viessmann.ViessmannApi import ViessmannApi, ViessmannOauth, Device
 
 
 class ViessmannSource(Source):
