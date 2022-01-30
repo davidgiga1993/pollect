@@ -4,8 +4,8 @@ import re
 from abc import abstractmethod
 from typing import List
 
-from pollect.google.StatsParser import StatsParser, OverviewParser
-from pollect.google.parser.AppVersionParser import AppVersionParser
+from pollect.libs.google.StatsParser import StatsParser, OverviewParser
+from pollect.libs.google.parser.AppVersionParser import AppVersionParser
 
 
 class FileProvider:

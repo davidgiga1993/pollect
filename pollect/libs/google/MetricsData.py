@@ -1,4 +1,4 @@
-from pollect.google.FileProvider import FileProvider
+from pollect.libs.google.FileProvider import FileProvider
 
 
 class MetaMetric:

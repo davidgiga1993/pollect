@@ -69,6 +69,12 @@ class Source(Log):
 
         return results
 
+    def shutdown(self):
+        """
+        Terminates any background jobs running for this source
+        """
+        pass
+
     @abstractmethod
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
         """
