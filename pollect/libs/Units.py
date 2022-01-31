@@ -68,6 +68,8 @@ class ValueWithUnit:
         Returns the value in its base unit (for example A instead of mA)
         :return: Value
         """
+        if self.unit is None:
+            return self.value
         return self.unit.to_base(self.value)
 
     def __str__(self):
