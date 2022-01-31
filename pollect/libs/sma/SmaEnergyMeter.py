@@ -32,7 +32,7 @@ class ObisValueDescription:
 
 
 class ObisNameMap:
-    def __init__(self):
+    def __init__(self, obis_base_id: int):
         unit_ws = Ws()
         unit_mv = Unit.milli('V')
         unit_tenth_w = Unit.tenth('W')
@@ -54,23 +54,23 @@ class ObisNameMap:
             13: ['Leistungsfaktor', unit_mcos],
         }
 
-        base_id = 0
+        obis_base_id = 0
         self._all = {
-            self.build_obis(base_id, 13, 4, 0): ObisValueDescription('Leistungsfaktor', 'avg', 0, unit_mcos),
-            self.build_obis(base_id, 14, 4, 0): ObisValueDescription('Netzfrequenz', 'avg', 0, unit_mhz),
+            self.build_obis(obis_base_id, 13, 4, 0): ObisValueDescription('Leistungsfaktor', 'avg', 0, unit_mcos),
+            self.build_obis(obis_base_id, 14, 4, 0): ObisValueDescription('Netzfrequenz', 'avg', 0, unit_mhz),
         }
         phases = [0, 1, 2, 3]
         for phase in phases:
             offset = phase * 20
             for key, value in phase_avg_map.items():
                 if phase > 0:
-                    self._all[self.build_obis(base_id, key + offset, 4, 0)] = \
+                    self._all[self.build_obis(obis_base_id, key + offset, 4, 0)] = \
                         ObisValueDescription(value[0], 'avg', phase, value[1])
 
             for key, value in power.items():
-                self._all[self.build_obis(base_id, key + offset, 4, 0)] = ObisValueDescription(value, 'avg', phase,
+                self._all[self.build_obis(obis_base_id, key + offset, 4, 0)] = ObisValueDescription(value, 'avg', phase,
                                                                                                unit_tenth_w)
-                self._all[self.build_obis(base_id, key + offset, 8, 0)] = ObisValueDescription(value, 'sum', phase,
+                self._all[self.build_obis(obis_base_id, key + offset, 8, 0)] = ObisValueDescription(value, 'sum', phase,
                                                                                                unit_ws)
 
     @staticmethod
@@ -96,7 +96,7 @@ class ObisValue(ValueWithUnit):
         self._value = value
         self.meta = name_map.find(obis_id)
         if self.meta:
-            self._unit = self.meta.unit
+            self.unit = self.meta.unit
 
     def __str__(self):
         base = super().__str__()
@@ -159,9 +159,9 @@ class MeterProtocol:
 
 
 class MeterProtocolParser(Log):
-    def __init__(self):
+    def __init__(self, obis_base: int):
         super().__init__()
-        self._name_map = ObisNameMap()
+        self._name_map = ObisNameMap(obis_base)
 
     def parse(self, data: bytes) -> MeterProtocol:
         protocol = MeterProtocol()
@@ -219,11 +219,11 @@ class SmaEnergyMeter(Log):
     _active: bool = False
     _sock: socket.socket
 
-    def __init__(self, own_ip: str):
+    def __init__(self, own_ip: str, obis_base: int = 1):
         super().__init__()
         self.deviceFound = Event()
         self.meterProtocolReceived = Event()
-        self._parser = MeterProtocolParser()
+        self._parser = MeterProtocolParser(obis_base)
         self._own_ip = own_ip
 
     def stop(self):
