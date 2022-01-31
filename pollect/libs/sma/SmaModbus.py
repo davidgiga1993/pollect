@@ -79,7 +79,7 @@ class SmaModbus(Log):
 
     def read(self, reg: Register) -> ValueWithUnit:
         value = u32(self._client.read_holding_registers(reg.id, 2, unit=self._unit_id))
-        if (value | 0x80000000) == 0xffffffff:
+        if value == 0xffffffff or value == 0x80000000:
             # Use 0 as a more sane "not available" value
             value = 0
         return ValueWithUnit(value, reg.unit)
