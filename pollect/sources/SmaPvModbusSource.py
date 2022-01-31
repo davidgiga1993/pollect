@@ -1,8 +1,6 @@
 from typing import Optional, List
 
-from pollect.core.ValueCache import ValueCache
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.libs.sma.SmaEnergyMeter import SmaEnergyMeter, MeterProtocol
 from pollect.libs.sma.SmaModbus import SmaModbus, SmaRegisters
 from pollect.sources.Source import Source
 
