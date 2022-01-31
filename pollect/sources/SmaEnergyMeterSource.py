@@ -39,6 +39,9 @@ class SmaEnergyMeterSource(Source):
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
         value_set = ValueSet(labels=['phase'])
         value_set.values.extend(self._cache.flush_values())
+        if len(value_set.values) == 0:
+            self.log.warning('No data received from meter')
+
         for value in value_set.values:
             value.name = value.name.lower().replace(' ', '')
 
