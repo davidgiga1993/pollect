@@ -79,16 +79,7 @@ class SmaModbus(Log):
 
     def read(self, reg: Register) -> ValueWithUnit:
         value = u32(self._client.read_holding_registers(reg.id, 2, unit=self._unit_id))
+        if value == 0xffffffff:
+            # Use 0 as a more sane "not available" value
+            value = 0
         return ValueWithUnit(value, reg.unit)
-
-
-if __name__ == '__main__':
-    bus = SmaModbus('pv-inverter.home.local')
-    bus.connect()
-    print(str(bus.read(SmaRegisters.REG_FREQUENCY)))
-    print(str(bus.read(SmaRegisters.REG_TEMP)))
-    print(str(bus.read(SmaRegisters.REG_DC_INPUT_VOLTAGE)))
-    print(str(bus.read(SmaRegisters.REG_VOLTAGE_L1)))
-    print(str(bus.read(SmaRegisters.REG_CURRENT_A_SUM)))
-    print(str(bus.read(SmaRegisters.REG_POWER_EFFECTIVE_SUM)))
-    bus.close()
