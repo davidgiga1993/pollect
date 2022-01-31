@@ -3,9 +3,10 @@ from __future__ import annotations
 import socket
 import struct
 import threading
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from pollect.core.Log import Log
 from pollect.core.events.Event import Event
+from pollect.libs.Units import Unit, Ws, ValueWithUnit
 
 
 class ObisValueDescription:
@@ -17,12 +18,13 @@ class ObisValueDescription:
     """
     count or avg
     """
-    unit: str
+
+    unit: Unit
     """
     Unit of the value
     """
 
-    def __init__(self, name: str, type_str: str, phase: int, unit: str):
+    def __init__(self, name: str, type_str: str, phase: int, unit: Unit):
         self.name = name
         self.type = type_str
         self.phase = phase
@@ -31,6 +33,13 @@ class ObisValueDescription:
 
 class ObisNameMap:
     def __init__(self):
+        unit_ws = Ws()
+        unit_mv = Unit.milli('V')
+        unit_tenth_w = Unit.tenth('W')
+        unit_ma = Unit.milli('A')
+        unit_mhz = Unit.milli('Hz')
+        unit_mcos = Unit.milli('cos φ')
+
         power = {
             1: 'Wirkleistung_positive',
             2: 'Wirkleistung_negative',
@@ -40,15 +49,15 @@ class ObisNameMap:
             10: 'Scheinleistung_negative',
         }
         phase_avg_map = {
-            11: ['Strom', 'mA'],
-            12: ['Spannung', 'mV'],
-            13: ['Leistungsfaktor', 'mcos φ'],
+            11: ['Strom', unit_ma],
+            12: ['Spannung', unit_mv],
+            13: ['Leistungsfaktor', unit_mcos],
         }
 
         base_id = 0
         self._all = {
-            self.build_obis(base_id, 13, 4, 0): ObisValueDescription('Leistungsfaktor', 'avg', 0, 'mcos φ'),
-            self.build_obis(base_id, 14, 4, 0): ObisValueDescription('Netzfrequenz', 'avg', 0, 'mHz'),
+            self.build_obis(base_id, 13, 4, 0): ObisValueDescription('Leistungsfaktor', 'avg', 0, unit_mcos),
+            self.build_obis(base_id, 14, 4, 0): ObisValueDescription('Netzfrequenz', 'avg', 0, unit_mhz),
         }
         phases = [0, 1, 2, 3]
         for phase in phases:
@@ -60,9 +69,9 @@ class ObisNameMap:
 
             for key, value in power.items():
                 self._all[self.build_obis(base_id, key + offset, 4, 0)] = ObisValueDescription(value, 'avg', phase,
-                                                                                               'dW')
+                                                                                               unit_tenth_w)
                 self._all[self.build_obis(base_id, key + offset, 8, 0)] = ObisValueDescription(value, 'sum', phase,
-                                                                                               'Ws')
+                                                                                               unit_ws)
 
     @staticmethod
     def build_obis(a, b, c, d) -> str:
@@ -72,52 +81,26 @@ class ObisNameMap:
         return self._all.get(obis_id)
 
 
-class ObisValue:
+class ObisValue(ValueWithUnit):
     obis_id: str
     """
     Unique ID of this parameter
     """
 
-    value: int
-    """
-    Depends on the obis id
-    """
     meta: ObisValueDescription
 
     def __init__(self, obis_id: str, value: int, name_map: ObisNameMap):
+        # noinspection PyTypeChecker
+        super().__init__(value, None)
         self.obis_id = obis_id
-        self.value = value
+        self._value = value
         self.meta = name_map.find(obis_id)
-
-    def get_as_base_unit(self) -> float:
-        """
-        Returns the value in its base unit (for example A instead of mA)
-        :return: Value
-        """
-        return self._get_base_unit()[1]
-
-    def _get_base_unit(self) -> Tuple[str, float]:
-        value = self.value
-        unit = self.meta.unit
-        if unit == 'Ws':
-            # Convert to something more usable
-            value = self.ws_to_kwh(value)
-            unit = 'kWh'
-        elif unit.startswith('m'):
-            value = value / 1000
-            unit = unit[1:]
-        elif unit.startswith('d'):
-            value = value / 10
-            unit = unit[1:]
-        return unit, value
-
-    @staticmethod
-    def ws_to_kwh(val: int):
-        return val / 3600000
+        if self.meta:
+            self._unit = self.meta.unit
 
     def __str__(self):
-        unit, value = self._get_base_unit()
-        return f'Phase {self.meta.phase} {self.meta.name} ({self.meta.type}): {value} {unit}'
+        base = super().__str__()
+        return f'Phase {self.meta.phase} {self.meta.name} ({self.meta.type}): {base}'
 
 
 class ByteStream:
@@ -262,7 +245,7 @@ class SmaEnergyMeter(Log):
         self._sock.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP,
                               struct.pack("4sl", socket.inet_aton(self.MCAST_GRP), socket.INADDR_ANY))
 
-        listen_thr = threading.Thread(target=self._receive)
+        listen_thr = threading.Thread(target=self._receive, daemon=True)
         listen_thr.start()
 
     def _receive(self):

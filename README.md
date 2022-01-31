@@ -247,6 +247,26 @@ the [homematicip](https://homematicip-rest-api.readthedocs.io/en/latest/gettings
 | authToken   | Auth token      |
 | accessPoint | Access point id |
 
+## SMA Energy Meter `SmaEnergyMeter`
+
+Collects data from the SMA Home Manager 2.0. The data is received via multicast from the meter. If this doesn't work for
+you, there is also a possibility to configure the meter to unicast the values directly to your machine.
+
+| Param  | Desc                                                                            |
+|--------|---------------------------------------------------------------------------------|
+| hostIp | The primary IP address of the host running pollect. <br/>Required for multicast |
+
+## SMA PV Modbus `SmaPvModbus`
+
+Collects data from SMA Photovoltaik inverters. Requires tcp modbus to be enabled on the inverted.
+
+Requires the `pymodbus` dependency. 
+
+| Param | Desc                                  |
+|-------|---------------------------------------|
+| host  | IP or hostname of the inverted        |
+| port  | Optional: modbus port, 502 by default |
+
 ## TP-LINK EAP `TpLinkEap`
 
 Collects wifi statistics of the TP-LINK EAP series devices. This uses the rest api of the device. Note that the devices
