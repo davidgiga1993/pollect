@@ -12,6 +12,8 @@ class FritzSource(Source):
     FritzBox API interaction
     """
 
+    MAX_COUNTER: int = 4294967295  # uint32
+
     def __init__(self, config):
         super().__init__(config)
         self._pass = config.get('pass')
@@ -50,7 +52,12 @@ class FritzSource(Source):
             self._stats[key] = value
             if last_stats is not None:
                 time_delta = int(time.time() - self._last_time)
-                data.add(Value(max(0, (value - last_stats) / time_delta), name=key))
+                value_delta = value - last_stats
+                if value_delta < 0:
+                    # Overflow happened (previously value was > than current value)
+                    value_delta = value + self.MAX_COUNTER
+
+                data.add(Value(value_delta / time_delta, name=key))
 
         self._last_time = time.time()
         return data
