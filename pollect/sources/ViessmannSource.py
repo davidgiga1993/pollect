@@ -62,9 +62,12 @@ class ViessmannSource(Source):
         supply_temp = features.get_feature('heating.circuits.0.sensors.temperature.supply').get_property_value('value')
         main_set.add(Value(supply_temp, name='supply_temp'))
 
-        secondary_temp_return = features.get_feature('heating.secondaryCircuit.sensors.temperature.return') \
-            .get_property_value('value')
-        main_set.add(Value(secondary_temp_return, name='secondary_return_temp'))
+        try:
+            secondary_temp_return = features.get_feature('heating.secondaryCircuit.sensors.temperature.return') \
+                .get_property_value('value')
+            main_set.add(Value(secondary_temp_return, name='secondary_return_temp'))
+        except KeyError as e:
+            self.log.info(str(e))
 
         secondary_temp_supply = features.get_feature('heating.secondaryCircuit.sensors.temperature.supply') \
             .get_property_value('value')
