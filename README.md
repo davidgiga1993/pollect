@@ -46,39 +46,29 @@ docker run -v $(pwd):/pollect -p 8000:8000 davidgiga1993/pollect:latest
 Here is an example for collecting the load average every 30 seconds as well as sampling the response time of google
 every 2 min and exporting it as prometheus metrics
 
-```json
-{
-  "tickTime": 30,
-  "threads": 4,
-  "writer": {
-	"type": "Prometheus",
-	"port": 8000
-  },
-  "executors": [
-	{
-	  "collection": "pollect",
-	  "sources": [
-		{
-		  "type": "LoadAvg"
-		}
-	  ]
-	},
-	{
-	  "collection": "slowerMetrics",
-	  "tickTime": 120,
-	  "sources": [
-		{
-		  "type": "Http",
-		  "url": "https://google.com",
-		  "labels": {
-			"system": "prod"
-		  }
-		}
-	  ]
-	}
-  ]
-}
+```yml
+---
+tickTime: 30
+threads: 4
+writer:
+  type: Prometheus
+  port: 8000
+executors:
+  - collection: pollect
+    sources:
+      - type: LoadAvg
+  - collection: slowerMetrics
+    tickTime: 120
+    sources:
+      - type: Http
+        url: https://google.com
+        labels:
+          # It is also possible to access env variables anywhere
+          # in the config
+          system: prod
+          home: ${HOME}
 ```
+
 
 A more advanced configuration sample can be found in the `pollect.[json|yml]` file.
 

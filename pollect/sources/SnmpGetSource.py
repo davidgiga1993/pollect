@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from pollect.core.Log import Log
 
 from pollect.core.ValueSet import ValueSet, Value
+from pollect.core.config.ConfigContainer import ConfigContainer
 from pollect.sources.Source import Source
 from pollect.sources.helper.ProbeValue import ProbeValue
 
@@ -30,20 +31,24 @@ class SnmpValue:
 
 
 class MetricDefinition(Log):
-    def __init__(self, data: Dict[str, any]):
+    def __init__(self, data: ConfigContainer):
         super().__init__('SnmpMetric')
         self.name = data['name']  # type: str
         self.start = 0  # type: int
         self.end = 0  # type: int
         self.mode = data.get('mode')  # type: Optional[str]
         self.label_name = None  # type: Optional[str]
-        self.oid = data['oid']  # type: str
+        self.oid = ''  # type: str
 
         range_data = data.get('range')  # type: Dict[str, any]
         if range_data is not None:
             self.start = range_data['from']
             self.end = range_data['to']
             self.label_name = range_data['label']
+            # We replace the "label_name" in the oid
+            self.oid = data.get('oid', ignore_missing_env=self.label_name, required=True)
+        else:
+            self.oid = data['oid']
 
         self._last_probe = {}  # type: Dict[str, ProbeValue]
         """
@@ -173,7 +178,7 @@ class SnmpGetSource(Source):
             # Sample lines:
             # iso.3.6.1.2.1.16.1.1.1.1.47 = INTEGER: 47
             # iso.3.6.1.2.1.16.1.1.1.4.43 = Counter32: 27909381
-            match = re.match(r'(.+)\s+=\s*(.+?):\s*([0-9]+)', line)
+            match = re.match(r'(.+)\s+=\s*(.+?):\s*(\d+)', line)
             if not match:
                 continue
             oid = match.group(1)

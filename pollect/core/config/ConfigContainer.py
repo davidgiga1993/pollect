@@ -24,16 +24,17 @@ class ConfigContainer:
         for value in self._data.values():
             yield self._resolve(value)
 
-    def get(self, key: str, default: any = None, required: bool = False) -> Optional[any]:
+    def get(self, key: str, default: any = None, required: bool = False,
+            ignore_missing_env: Optional[str] = None) -> Optional[any]:
         if key not in self._data:
             if required:
                 raise KeyError(f'{key} not found')
             return default
 
         value = self._data[key]
-        return self._resolve(value, key)
+        return self._resolve(value, key, ignore_missing_env)
 
-    def _resolve(self, value: any, key: str = None):
+    def _resolve(self, value: any, key: str = None, ignore_missing_env: Optional[str] = None):
         """
         Resolves any environment references in the given value
         :param value: Value
@@ -56,6 +57,8 @@ class ConfigContainer:
         for env_key in self.pattern.findall(value):
             env_value = os.environ.get(env_key)
             if env_value is None:
+                if env_key == ignore_missing_env:
+                    continue
                 raise KeyError(f'Environment {env_key} not found, defined in {key}')
             value = value.replace('${' + env_key + '}', env_value)
 

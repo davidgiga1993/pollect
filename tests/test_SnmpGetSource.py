@@ -2,6 +2,7 @@ from time import sleep
 from unittest import TestCase
 from unittest.mock import patch
 
+from pollect.core.config.ConfigContainer import ConfigContainer
 from pollect.sources.SnmpGetSource import SnmpGetSource, SnmpValue
 
 
@@ -43,26 +44,27 @@ iso.3.6.1.2.1.16.1.1.1.3.3 = Counter32: 11
 '''
         mock_check_output.return_value = std_out.encode('utf-8')
 
-        source = SnmpGetSource({
+        config = ConfigContainer({
             'host': '10.1.1.1',
             'metrics': [{
-                'oid': 'iso.3.6.1.2.1.16.1.1.1.3.${id}',
+                'oid': 'iso.3.6.1.2.1.16.1.1.1.3.${randomParam}',
                 'range': {
                     'from': 1,
                     'to': 3,
-                    'label': 'id',
+                    'label': 'randomParam',
                 },
                 'name': 'Test'
             }],
             'type': '-'
         })
-
+        source = SnmpGetSource(config)
+        
         data = source.probe()[0]
         self.assertEqual(3, len(data.values))
         self.assertEqual('Test', data.values[0].name)
         self.assertEqual('Test', data.values[1].name)
         self.assertEqual('Test', data.values[2].name)
-        self.assertEqual('id', data.labels[0])
+        self.assertEqual('randomParam', data.labels[0])
         self.assertEqual('1', data.values[0].label_values[0])
         self.assertEqual('2', data.values[1].label_values[0])
         self.assertEqual('3', data.values[2].label_values[0])
