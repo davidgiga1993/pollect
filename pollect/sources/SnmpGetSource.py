@@ -112,30 +112,30 @@ class MetricDefinition(Log):
 
         return data
 
-    def _to_value(self, value: SnmpValue, oid: str) -> Optional[Value]:
+    def _to_value(self, smnp_value: SnmpValue, oid: str) -> Optional[Value]:
         """
         Converts the given snmp value to a pollect value
-        :param value: Probed value
+        :param smnp_value: Probed value
         """
         if self.mode != 'rate':
             # Regular value
-            return Value(value.value, name=self.name)
+            return Value(smnp_value.value, name=self.name)
 
         last_probe = self._last_probe.get(oid)  # type: Optional[ProbeValue]
         if last_probe is None:
-            self._last_probe[oid] = ProbeValue(time.time(), value)
+            self._last_probe[oid] = ProbeValue(time.time(), smnp_value)
             return None
 
         # > 1st run - create a rate value for each value and sum them afterwards
         # This is required to handle the overflow of each value correctly
         time_delta = time.time() - last_probe.time
-        delta_value = value.get_delta(last_probe.data.value)
-        value = Value(delta_value / time_delta, name=self.name)
+        delta_value = smnp_value.get_delta(last_probe.data.value)
+        pollect_value = Value(delta_value / time_delta, name=self.name)
 
         # Refresh the data
         last_probe.time = time.time()
-        last_probe.data = value
-        return value
+        last_probe.data = smnp_value
+        return pollect_value
 
 
 class SnmpGetSource(Source):
