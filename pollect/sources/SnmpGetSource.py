@@ -1,6 +1,9 @@
 import re
 import subprocess
 import time
+from typing import Dict, List, Optional
+
+from pollect.core.Log import Log
 
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.sources.Source import Source
@@ -26,6 +29,110 @@ class SnmpValue:
         return delta
 
 
+class MetricDefinition(Log):
+    def __init__(self, data: Dict[str, any]):
+        super().__init__('SnmpMetric')
+        self.name = data['name']  # type: str
+        self.start = 0  # type: int
+        self.end = 0  # type: int
+        self.mode = data.get('mode')  # type: Optional[str]
+        self.label_name = None  # type: Optional[str]
+        self.oid = data['oid']  # type: str
+
+        range_data = data.get('range')  # type: Dict[str, any]
+        if range_data is not None:
+            self.start = range_data['from']
+            self.end = range_data['to']
+            self.label_name = range_data['label']
+
+        self._last_probe = {}  # type: Dict[str, ProbeValue]
+        """
+        Holds the timestamps of the last metrics mapped to the metric name.
+        This is used to calculate a rate
+        """
+
+    def get_label_names(self) -> List[str]:
+        """
+        Returns the names of the labels used for this metric
+        :return: Label names
+        """
+        if self.label_name is None:
+            return []
+        return [self.label_name]
+
+    def get_oids(self) -> List[str]:
+        """
+        Returns all OIDs which should be probed for this metric
+        :return: Ids
+        """
+        if self.label_name is None:
+            return [self.oid]
+
+        oids = []
+        for x in range(self.start, self.end + 1):
+            oids.append(self.oid.replace('${' + self.label_name + '}', str(x)))
+        return oids
+
+    def probe(self, snmp_values: Dict[str, SnmpValue]) -> ValueSet:
+        data = ValueSet(self.get_label_names())
+        if self.label_name is None:
+            oid = self.oid
+            snmp_value = snmp_values.get(oid)
+            if snmp_value is None:
+                self.log.error(f'OID {oid} not found')
+                return data
+
+            value = self._to_value(snmp_value, oid)
+            if value is None:
+                return data
+            data.values.append(value)
+            return data
+
+        # Multi value
+        oids = self.get_oids()
+        index = 0
+        for x in range(self.start, self.end + 1):
+            oid = oids[index]
+            index += 1
+            snmp_value = snmp_values.get(oid)
+            if snmp_value is None:
+                self.log.error(f'OID {oid} not found')
+                return data
+
+            value = self._to_value(snmp_value, oid)
+            if value is None:
+                continue
+            value.label_values = [str(x)]
+            data.values.append(value)
+
+        return data
+
+    def _to_value(self, value: SnmpValue, oid: str) -> Optional[Value]:
+        """
+        Converts the given snmp value to a pollect value
+        :param value: Probed value
+        """
+        if self.mode != 'rate':
+            # Regular value
+            return Value(value.value, name=self.name)
+
+        last_probe = self._last_probe.get(oid)  # type: Optional[ProbeValue]
+        if last_probe is None:
+            self._last_probe[oid] = ProbeValue(time.time(), value)
+            return None
+
+        # > 1st run - create a rate value for each value and sum them afterwards
+        # This is required to handle the overflow of each value correctly
+        time_delta = time.time() - last_probe.time
+        delta_value = value.get_delta(last_probe.data.value)
+        value = Value(delta_value / time_delta, name=self.name)
+
+        # Refresh the data
+        last_probe.time = time.time()
+        last_probe.data = value
+        return value
+
+
 class SnmpGetSource(Source):
     """
     Wrapper for snmpget
@@ -34,63 +141,41 @@ class SnmpGetSource(Source):
     def __init__(self, config):
         super().__init__(config)
         self.host = config['host']
-        self.metrics = config['metrics']
+        self.metric_defs = [MetricDefinition(x) for x in config['metrics']]  # type: List[MetricDefinition]
+        self.oids = []  # type: List[str]
+        for metric_def in self.metric_defs:
+            self.oids.extend(metric_def.get_oids())
+
         self.community = config.get('communityString', 'public')
-        self._last_probe = {}
+
+    def _probe(self) -> List[ValueSet]:
+        snmp_values = self._get_values(self.oids)
+
+        value_sets = []
+        for metric_def in self.metric_defs:
+            data = metric_def.probe(snmp_values)
+            value_sets.append(data)
+        return value_sets
+
+    def _get_values(self, oids: List[str]) -> Dict[str, SnmpValue]:
         """
-        Holds the timestamps of the last metrics mapped to the metric name
-        
-        :type _last_probe: dict(str, ProbeValue)
-        """
+        Probes a list of oids
 
-    def _probe(self):
-        data = ValueSet()
-        for metric in self.metrics:
-            name = metric['name']
-            values = self._probe_metric(metric)
-
-            if metric.get('mode') != 'rate':
-                # Regular value - just blindly sum the values
-                data.add(Value(sum(value.value for value in values), name=name))
-                continue
-
-            last_probe = self._last_probe.get(name)
-            if last_probe is None:
-                self._last_probe[name] = ProbeValue(time.time(), values)
-                continue
-
-            # > 1st run - create a rate value for each value and sum them afterwards
-            # This is required to handle the overflow of each value correctly
-            time_delta = time.time() - last_probe.time
-            delta_sum = 0
-            for idx in range(len(values)):
-                delta_sum += values[idx].get_delta(last_probe.data[idx].value)
-            data.add(Value(delta_sum / time_delta, name=name))
-
-            # Refresh the data
-            last_probe.time = time.time()
-            last_probe.data = values
-        return data
-
-    def _probe_metric(self, metric: dict):
-        """
-        Probes a single metric. All oids of this metric will be summed
-
-        :param metric: Metric
-        :return: Value
-        :rtype: List[SnmpValue]
+        :param oids: List of oids which should be probed
+        :return: Values
         """
         args = ['snmpget', '-v1', '-c', self.community, self.host]
-        args.extend(metric['oids'])
+        args.extend(oids)
         lines = subprocess.check_output(args).decode('utf-8').splitlines()
 
-        values = []
+        values = {}
         for line in lines:
             # Sample lines:
             # iso.3.6.1.2.1.16.1.1.1.1.47 = INTEGER: 47
             # iso.3.6.1.2.1.16.1.1.1.4.43 = Counter32: 27909381
-            match = re.match(r'.+\s*=\s*(.+?):\s*([0-9]+)', line)
+            match = re.match(r'(.+)\s+=\s*(.+?):\s*([0-9]+)', line)
             if not match:
                 continue
-            values.append(SnmpValue(match.group(1), float(match.group(2))))
+            oid = match.group(1)
+            values[oid] = SnmpValue(match.group(2), float(match.group(3)))
         return values

@@ -191,25 +191,34 @@ Bind DNS server statistics.
 
 Wrapper for the snmpget binary.
 
-```
-{
-	"type": "SnmpGet",
-	"name": "Procurve",
-	// Host which should be contacted
-	"host": "10.1.100.1",
-	// Community string (public by default)
-	"communityString": "public",
-	// Metrics which should be collected
-	// Each metric can query one or more oids
-	"metrics": [{ 
-		// If multiple oids are given they will be summed
-		"oids": ["iso.3.6.1.2.1.16.1.1.1.4.1"] ,
-		// Name of the metric
-		"name": "throughput", 
-		// Defines how the value should be processed: raw -> No further processing, rate -> change per second
-		"mode": "rate"
-	}]
-}
+```yaml
+type: SnmpGet
+name: Procurve
+# Host which should be contacted
+host: 10.1.100.1
+# Community string (public by default)
+communityString: public
+# Metrics which should be collected
+# Each metric can query one or more oids
+metrics:
+  # Name of the metric
+  - name: throughput
+    # Processing mode:
+    # - undefined (default): No processing
+    # - rate: Computes the change per second, compensating for value overflows
+    mode: rate
+    # OID which should be probed
+    oid: iso.3.6.1.2.1.16.1.1.1.4.1
+
+  # It is also possible to define ranges
+  - name: interface_link_state
+    # The parameter in the oid will be replaced with the range number
+    oid: iso.3.6.1.2.1.2.2.1.5.${if}
+    range:
+      from: 1
+      to: 10 # From and to are inclusive
+      label: "if" # The label will be attached to the metric
+
 ```
 
 ## Plex server `Plex`
@@ -260,7 +269,7 @@ you, there is also a possibility to configure the meter to unicast the values di
 
 Collects data from SMA Photovoltaik inverters. Requires tcp modbus to be enabled on the inverted.
 
-Requires the `pymodbus` dependency. 
+Requires the `pymodbus` dependency.
 
 | Param | Desc                                  |
 |-------|---------------------------------------|
