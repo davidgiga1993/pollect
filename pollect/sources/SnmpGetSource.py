@@ -12,7 +12,7 @@ from pollect.sources.helper.ProbeValue import ProbeValue
 
 
 class SnmpValue:
-    COUNTER32 = 'Counter32'
+    COUNTER32 = 'counter32'
 
     __slots__ = ['val_type', 'value']
 
@@ -30,25 +30,40 @@ class SnmpValue:
         return delta
 
 
+class OidLabel:
+    def __init__(self, name: str, oid: str):
+        self.name = name
+        self.oid = oid
+
+
+class ResolvedOid:
+    def __init__(self, oid: str):
+        self.oid = oid
+        self.label_oids = []  # type: List[str]
+        """
+        OIDs of the dynamic labels
+        """
+
+        self.static_labels = []  # type: List[str]
+        """
+        Values of static labels
+        """
+
+
 class MetricDefinition(Log):
     def __init__(self, data: ConfigContainer):
         super().__init__('SnmpMetric')
         self.name = data['name']  # type: str
-        self.start = 0  # type: int
-        self.end = 0  # type: int
         self.mode = data.get('mode')  # type: Optional[str]
-        self.label_name = None  # type: Optional[str]
-        self.oid = ''  # type: str
+        self.label_names = []  # type: List[str]
+        """
+        The names of all labels
+        """
 
-        range_data = data.get('range')  # type: Dict[str, any]
-        if range_data is not None:
-            self.start = range_data['from']
-            self.end = range_data['to']
-            self.label_name = range_data['label']
-            # We replace the "label_name" in the oid
-            self.oid = data.get('oid', ignore_missing_env=self.label_name, required=True)
-        else:
-            self.oid = data['oid']
+        self.oids = []  # type: List[ResolvedOid]
+        """
+        OIDs which should be probed
+        """
 
         self._last_probe = {}  # type: Dict[str, ProbeValue]
         """
@@ -56,60 +71,54 @@ class MetricDefinition(Log):
         This is used to calculate a rate
         """
 
-    def get_label_names(self) -> List[str]:
-        """
-        Returns the names of the labels used for this metric
-        :return: Label names
-        """
-        if self.label_name is None:
-            return []
-        return [self.label_name]
+        range_data = data.get('range')  # type: Dict[str, any]
+        start = 0
+        end = 0
+        label_name = None
+        if range_data is not None:
+            start = range_data['from']
+            end = range_data['to']
+            label_name = range_data['label']
+            self.label_names.append(label_name)
+
+            # We replace the "label_name" in the oid
+            oid = data.get('oid', ignore_missing_env=label_name, required=True)
+        else:
+            oid = data['oid']
+
+        oid_labels = []  # type: List[OidLabel]
+        oid_labels_data = data.get('oidLabels', ConfigContainer({}))  # type: ConfigContainer
+        for label_key in oid_labels_data.keys():
+            label_oid = oid_labels_data.get(label_key, ignore_missing_env=label_name, required=True)
+            oid_labels.append(OidLabel(label_key, label_oid))
+            self.label_names.append(label_key)
+
+        self.oids = self._resolve_oids(oid, start, end, label_name, oid_labels)
 
     def get_oids(self) -> List[str]:
         """
-        Returns all OIDs which should be probed for this metric
-        :return: Ids
+        Returns all OIDs which should be probed
+        :return: OIDs
         """
-        if self.label_name is None:
-            return [self.oid]
-
         oids = []
-        for x in range(self.start, self.end + 1):
-            oids.append(self.oid.replace('${' + self.label_name + '}', str(x)))
+        for resolved in self.oids:
+            oids.append(resolved.oid)
+            oids.extend(resolved.label_oids)
         return oids
 
     def probe(self, snmp_values: Dict[str, SnmpValue]) -> ValueSet:
-        data = ValueSet(self.get_label_names())
-        if self.label_name is None:
-            oid = self.oid
-            snmp_value = snmp_values.get(oid)
+        data = ValueSet(self.label_names)
+        for resolved in self.oids:
+            snmp_value = snmp_values.get(resolved.oid)
             if snmp_value is None:
-                self.log.error(f'OID {oid} not found')
-                return data
-
-            value = self._to_value(snmp_value, oid)
-            if value is None:
-                return data
-            data.values.append(value)
-            return data
-
-        # Multi value
-        oids = self.get_oids()
-        index = 0
-        for x in range(self.start, self.end + 1):
-            oid = oids[index]
-            index += 1
-            snmp_value = snmp_values.get(oid)
-            if snmp_value is None:
-                self.log.error(f'OID {oid} not found')
-                return data
-
-            value = self._to_value(snmp_value, oid)
-            if value is None:
+                self.log.error(f'OID {resolved.oid} not found')
                 continue
-            value.label_values = [str(x)]
-            data.values.append(value)
 
+            value = self._to_value(snmp_value, resolved.oid)
+            if value is None:
+                return data
+            value.label_values = self._get_label_values(resolved, snmp_values)
+            data.values.append(value)
         return data
 
     def _to_value(self, smnp_value: SnmpValue, oid: str) -> Optional[Value]:
@@ -136,6 +145,49 @@ class MetricDefinition(Log):
         last_probe.time = time.time()
         last_probe.data = smnp_value
         return pollect_value
+
+    @staticmethod
+    def _resolve_oids(oid: str, start: int, end: int, label_name: str, oid_labels: List[OidLabel]) \
+            -> List[ResolvedOid]:
+        """
+        Expands the configuration to the oids which should be probed
+        :param oid: Base OID
+        :param start: Start index
+        :param end: End index
+        :param label_name: Name of the iterator label parameter
+        :param oid_labels: Labels
+        :return: Resolved oids
+        """
+        if label_name is None:
+            resolved = ResolvedOid(oid)
+            resolved.label_oids = [x.oid for x in oid_labels]
+            return [resolved]
+
+        oids = []
+        for x in range(start, end + 1):
+            param_str = '${' + label_name + '}'
+            resolved = ResolvedOid(oid.replace(param_str, str(x)))
+            resolved.static_labels = [str(x)]
+            for label in oid_labels:
+                resolved.label_oids.append(label.oid.replace(param_str, str(x)))
+            oids.append(resolved)
+        return oids
+
+    @staticmethod
+    def _get_label_values(resolved: ResolvedOid, snmp_values: Dict[str, SnmpValue]) -> List[str]:
+        """
+        Returns the values of the dynamic oid labels
+        :return: Label values
+        """
+        labels = []
+        labels.extend(resolved.static_labels)
+        for label_oid in resolved.label_oids:
+            val = snmp_values.get(label_oid)
+            if val is None:
+                labels.append('')
+                continue
+            labels.append(val.value)
+        return labels
 
 
 class SnmpGetSource(Source):
@@ -178,9 +230,15 @@ class SnmpGetSource(Source):
             # Sample lines:
             # iso.3.6.1.2.1.16.1.1.1.1.47 = INTEGER: 47
             # iso.3.6.1.2.1.16.1.1.1.4.43 = Counter32: 27909381
-            match = re.match(r'(.+)\s+=\s*(.+?):\s*(\d+)', line)
+            # iso.3.6.1.2.1.16.1.1.1.4.43 = STRING: "sample value"
+            match = re.match(r'(.+)\s+=\s*(.+?):\s*(.+)', line)
             if not match:
                 continue
             oid = match.group(1)
-            values[oid] = SnmpValue(match.group(2), float(match.group(3)))
+            val_type = match.group(2).lower()
+            if val_type == 'string':
+                value = match.group(3)[1:-1]  # Remove "" wrapping
+            else:
+                value = float(match.group(3))
+            values[oid] = SnmpValue(val_type, value)
         return values
