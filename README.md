@@ -60,7 +60,7 @@ executors:
   - collection: slowerMetrics
     tickTime: 120
     sources:
-      - type: Http
+      - type: Http # See Http below for more details
         url: https://google.com
         labels:
           # It is also possible to access env variables anywhere
@@ -68,7 +68,6 @@ executors:
           system: prod
           home: ${HOME}
 ```
-
 
 A more advanced configuration sample can be found in the `pollect.[json|yml]` file.
 
@@ -100,13 +99,13 @@ The following parameters are available for all sources:
 
 ## Http response time `Http`
 
-Measures the http response time
+Measures the http response time in milliseconds
 
-| Param      | Desc                                             |
-|------------|--------------------------------------------------|
-| url        | Url to the web service                           |
-| timeout    | Timeout in seconds (default 15)                  |
-| statusCode | The expected status code (default any non error) |
+| Param      | Desc                                                                                      |
+|------------|-------------------------------------------------------------------------------------------|
+| url        | Url to the web service. Can be a list of strings as well (the url will be added as label) |
+| timeout    | Timeout in seconds (default 15)                                                           |
+| statusCode | The expected status code (default any non error)                                          |
 
 ## Disk usage `DiskUsage`
 
