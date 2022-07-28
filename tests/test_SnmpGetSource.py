@@ -58,7 +58,7 @@ iso.3.6.1.2.1.31.1.1.1.123 = STRING: "sample"'''
         self.assertEqual(1, len(data.labels))
         self.assertEqual('paramName', data.labels[0])
         self.assertEqual(1, len(data.values))
-        self.assertEquals('sample', data.values[0].label_values[0])
+        self.assertEqual('sample', data.values[0].label_values[0])
         self.assertEqual(123, data.values[0].value)
 
     @patch('pollect.sources.SnmpGetSource.subprocess.check_output')
