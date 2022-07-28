@@ -11,6 +11,7 @@ from pollect.writers.PrometheusWriter import PrometheusWriter
 class PrometheusSslWriter(PrometheusWriter):
     def __init__(self, config):
         super().__init__(config)
+        self._server = None
         self._key = config['key']
         self._cert = config['cert']
 
@@ -37,6 +38,10 @@ class PrometheusSslWriter(PrometheusWriter):
 
         logger = logging.getLogger('prom')
         logger.setLevel(logging.ERROR)
-        server = pywsgi.WSGIServer(('0.0.0.0', self._port), serve, keyfile=self._key, certfile=self._cert,
-                                   log=logger)
-        server.serve_forever()
+        self._server = pywsgi.WSGIServer(('0.0.0.0', self._port), serve, keyfile=self._key, certfile=self._cert,
+                                         log=logger)
+        self._server.start()
+
+    def stop(self):
+        self._server.stop()
+
