@@ -1,7 +1,6 @@
 from typing import List, Dict
 
 from prometheus_client import start_http_server, Gauge, registry
-from prometheus_client.metrics import MetricWrapperBase
 
 from pollect.core.ValueSet import ValueSet
 from pollect.writers.Writer import Writer

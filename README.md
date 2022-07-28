@@ -350,11 +350,23 @@ Prints the collected data to the stdout
 Exports the data via a prometheus endpoint. The port can be configured using
 `port`as configuration:
 
+```yaml
+writer:
+  type: Prometheus
+  port: 9001
 ```
-"writer": {
-    "type": "Prometheus",
-    "port": 9001
-}
+
+### Https support
+
+Pollect has a custom prometheus exporter which supports https.
+This requires the `gevent` package.
+
+```yaml
+writer:
+  type: PrometheusSsl
+  port: 8000
+  key: key.key
+  cert: cert.pem
 ```
 
 # Multithreading
