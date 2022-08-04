@@ -20,9 +20,15 @@ def accept(include, exclude, value):
     return True
 
 
-def get_url(url, timeout: int = 5, expected_status: Optional[int] = None):
+def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy: Optional[str] = None):
     try:
-        with request.urlopen(url, timeout=timeout) as url:
+        req = request.Request(url)
+        if proxy is not None:
+            req.set_proxy(proxy, 'http')
+            req.set_proxy(proxy, 'https')
+        req.timeout = timeout
+
+        with request.urlopen(req) as url:
             return url.read()
     except HTTPError as e:
         if expected_status == e.status:

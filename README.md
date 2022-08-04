@@ -106,6 +106,7 @@ Measures the http response time in milliseconds
 | url        | Url to the web service. Can be a list of strings as well (the url will be added as label) |
 | timeout    | Timeout in seconds (default 15)                                                           |
 | statusCode | The expected status code (default any non error)                                          |
+| proxy      | Http proxy which should be used (defaults to none)                                        |
 
 ## Disk usage `DiskUsage`
 
