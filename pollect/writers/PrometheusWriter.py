@@ -65,6 +65,7 @@ class PrometheusWriter(Writer):
         if self._httpd is None:
             return
         self._httpd.shutdown()
+        self._httpd = None
 
     def write(self, data: List[ValueSet], source_ref: object = None):
         existing_metrics = Utils.put_if_absent(self._prom_metrics, source_ref, {})

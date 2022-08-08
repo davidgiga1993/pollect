@@ -123,6 +123,7 @@ class TestCore(TestCase):
         schedule.run_pending()
         sleep(4)
         reply = requests.get('http://localhost:9123')
+        scheduler.stop()
         self.assertIn('github', reply.text)
         self.assertIn('google', reply.text)
 
