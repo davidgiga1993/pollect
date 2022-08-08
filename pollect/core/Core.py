@@ -55,7 +55,7 @@ class Configuration:
 
 class Executor(Log):
     """
-    Executes probes
+    Executes a collection of probes.
     """
 
     config: Dict[str, any]
@@ -124,13 +124,13 @@ class Executor(Log):
         partial_write = self.writer.supports_partial_write()
         futures = []
 
-        # Probe the actual data
         for source in self._sources:
             assert isinstance(source, Source)
             future = self.thread_pool.submit(self._probe_and_write if partial_write else self._probe, source)
             futures.append(future)
 
         if partial_write:
+            # Data has already been written to the exporter
             return
 
         # Wait and merge the results
@@ -138,7 +138,17 @@ class Executor(Log):
         for future in futures:
             # noinspection PyTypeChecker
             self._merge(future.result(), data)
-        self._write(data)
+        self._write(data, self)
+
+    def _probe_and_write(self, source: Source):
+        """
+        Probes a single source and writes the data to the writer
+        :param source: Source
+        """
+        value_sets = self._probe(source)
+        data = []
+        self._merge(value_sets, data)
+        self._write(data, source)
 
     def _probe(self, source: Source) -> Optional[List[ValueSet]]:
         """
@@ -160,16 +170,6 @@ class Executor(Log):
             self.log.error(f'Error while probing using source {source}: {e}')
         return None
 
-    def _probe_and_write(self, source: Source):
-        """
-        Probes a single source and writes the data to the writer
-        :param source: Source
-        """
-        value_sets = self._probe(source)
-        data = []
-        self._merge(value_sets, data)
-        self._write(data)
-
     def _merge(self, value_sets: List[ValueSet], results: List[ValueSet]):
         """
         Merges the given value sets
@@ -185,13 +185,19 @@ class Executor(Log):
                 value_set.name = self.collection_name
             results.append(value_set)
 
-    def _write(self, value_sets: List[ValueSet]):
+    def _write(self, value_sets: List[ValueSet], source_ref: object):
+        """
+        Writes the given value sets using the current exporter
+        :param value_sets: Value sets
+        :param source_ref: Reference object which collected the data.
+        This is used to detect if a metric has been removed
+        """
         if len(value_sets) == 0:
             return
 
         # Write the data
         self.log.info('Writing data...')
         try:
-            self.writer.write(value_sets)
+            self.writer.write(value_sets, source_ref)
         except Exception as e:
             self.log.error(f'Could not write data: {e}')

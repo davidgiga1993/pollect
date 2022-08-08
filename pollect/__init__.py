@@ -1,1 +1,1 @@
-name = "pollect"
+__version__ = '1.1.9'

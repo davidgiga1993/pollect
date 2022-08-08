@@ -35,11 +35,13 @@ class Writer(Log):
         """
 
     @abstractmethod
-    def write(self, data: List[ValueSet]):
+    def write(self, data: List[ValueSet], source_ref: object = None):
         """
         Writes the given data
 
         :param data: Data which should be exported
+        :param source_ref: Reference object which collected the data.
+        This is used to detect if a metric has been removed
         """
 
     def __eq__(self, other):
@@ -65,7 +67,7 @@ class DryRunWriter(Writer):
     def start(self):
         pass
 
-    def write(self, data: List[ValueSet]):
+    def write(self, data: List[ValueSet], source_ref: object = None):
         list_items = '\n###\n'.join([str(value_set) for value_set in data])
         self.log.info('[{}] Would write {}'.format(self._name, list_items))
 
@@ -86,7 +88,7 @@ class InMemoryWriter(Writer):
     def stop(self):
         pass
 
-    def write(self, data):
+    def write(self, data: List[ValueSet], source_ref: object = None):
         self.write_calls += 1
         self.data.append(data)
 

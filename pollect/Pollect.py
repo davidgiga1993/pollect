@@ -27,13 +27,20 @@ def load_config(config: str):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', dest='version', action='store_true',
+                        help='Prints the current version')
     parser.add_argument('-d', '--debug', dest='debug', action='store_true')
     parser.add_argument('-c', '--config', dest='config', default='config',
                         help='Configuration file which should be read. If no file extension is given '
                              'both (yml and json) will be checked.')
     parser.add_argument('-r', '--dry-run', dest='dry_run', action='store_true',
-                        help='Prints the probed data to the stdout instead of sending it to the writer')
+                        help='Prints the probed data to stdout instead of sending it to the writer')
     args = parser.parse_args()
+
+    if args.version:
+        from pollect import __version__
+        print(f'Octoploy {__version__}')
+        return
 
     if args.debug:
         Log.set_debug()
