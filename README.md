@@ -1,10 +1,9 @@
 # pollect - python data collection daemon
 
 pollect is a daemon for collecting system and application metrics in periodical intervals.
-(similar to collectd). It's designed to require very little dependencies to run.
+(similar to collectd). It's designed to require very little dependencies and to be easily customizable.
 
 # Architecture
-
 ```
  ------------                           ----------
  | executor |  -- result of sources --> | writer |

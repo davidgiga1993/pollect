@@ -15,6 +15,10 @@ if typing.TYPE_CHECKING:
 
 
 class Source(Log):
+    """
+    A single metrics source. May return multiple metrics and labels
+    """
+
     type: str = None
     """
     Type string of this source
