@@ -2,6 +2,7 @@ import os
 from time import sleep
 from unittest import TestCase
 
+import requests
 import schedule
 
 from pollect.core.Core import Configuration
@@ -74,7 +75,7 @@ class TestCore(TestCase):
                         {
                             "type": "Http",
                             "name": "dev_core",
-                            "url": "https://google.com",
+                            "url": ["https://google.com"],
                             "timeout": 1
                         },
                     ]
@@ -91,6 +92,39 @@ class TestCore(TestCase):
         self.assertIsInstance(config.writer, InMemoryWriter)
         data = config.writer.data
         self.assertGreater(len(data), 0)
+
+    def test_exec_partial_prometheus(self):
+        raw_config = {
+            "tickTime": 1,
+            "threads": 2,
+            "writer": {
+                "type": "Prometheus",
+                "port": 9123,
+            },
+            "executors": [
+                {
+                    "collection": "pollect",
+                    "sources": [
+                        {
+                            "type": "Http",
+                            "name": "dev_core",
+                            "url": ["https://google.com", "https://github.com"],
+                            "timeout": 1
+                        },
+                    ]
+                }
+            ]
+        }
+        config = Configuration(raw_config)
+        executors = config.create_executors()
+        scheduler = ExecutionScheduler(config, executors)
+        scheduler.create()
+        sleep(1)
+        schedule.run_pending()
+        sleep(4)
+        reply = requests.get('http://localhost:9123')
+        self.assertIn('github', reply.text)
+        self.assertIn('google', reply.text)
 
     def test_exec_parallel(self):
         raw_config = {

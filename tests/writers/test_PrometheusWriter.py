@@ -11,13 +11,16 @@ from pollect.writers.Writer import Writer
 class TestPrometheusWriter(TestCase):
     writer: Writer = None
 
-    @staticmethod
-    def setUpClass() -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         # Singleton
         if TestPrometheusWriter.writer is None:
             TestPrometheusWriter.writer = PrometheusWriter({'port': 9123})
             TestPrometheusWriter.writer.start()
 
+    @classmethod
+    def tearDownClass(cls) -> None:
+        TestPrometheusWriter.writer.stop()
     def test_removal(self):
         value_set = ValueSet()
         value_set.values.append(Value(0, name='test'))

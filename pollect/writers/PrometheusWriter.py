@@ -1,6 +1,8 @@
+import threading
 from typing import List, Dict
+from wsgiref.simple_server import WSGIServer
 
-from prometheus_client import start_http_server, Gauge, registry
+from prometheus_client import start_http_server, Gauge, registry, exposition, REGISTRY
 
 from pollect.core.ValueSet import ValueSet
 from pollect.libs import Utils
@@ -30,6 +32,7 @@ class PrometheusWriter(Writer):
     """
 
     _port: int
+    _httpd: WSGIServer
 
     def __init__(self, config):
         super().__init__(config)
@@ -40,10 +43,28 @@ class PrometheusWriter(Writer):
         return True
 
     def start(self):
-        start_http_server(self._port)
+        """
+        Starts the prometheus exporter.
+        We start the server manually, so we can also terminate it
+        """
+        """Starts a WSGI server for prometheus metrics as a daemon thread."""
+        addr: str = '0.0.0.0'
+        port = self._port
+
+        class TmpServer(exposition.ThreadingWSGIServer):
+            """Copy of ThreadingWSGIServer to update address_family locally"""
+
+        TmpServer.address_family, addr = exposition._get_best_family(addr, port)
+        app = exposition.make_wsgi_app(REGISTRY)
+        self._httpd = exposition.make_server(addr, port, app, TmpServer, handler_class=exposition._SilentHandler)
+        t = threading.Thread(target=self._httpd.serve_forever)
+        t.daemon = True
+        t.start()
 
     def stop(self):
-        pass
+        if self._httpd is None:
+            return
+        self._httpd.shutdown()
 
     def write(self, data: List[ValueSet], source_ref: object = None):
         existing_metrics = Utils.put_if_absent(self._prom_metrics, source_ref, {})

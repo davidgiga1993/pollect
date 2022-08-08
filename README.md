@@ -61,7 +61,7 @@ executors:
     sources:
       - type: Http # See Http below for more details
         url: https://google.com
-        labels:
+        labels: # Additional labels/tags for the metrics
           # It is also possible to access env variables anywhere
           # in the config
           system: prod
