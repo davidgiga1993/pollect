@@ -4,6 +4,7 @@ pollect is a daemon for collecting system and application metrics in periodical 
 (similar to collectd). It's designed to require very little dependencies and to be easily customizable.
 
 # Architecture
+
 ```
  ------------                           ----------
  | executor |  -- result of sources --> | writer |
@@ -335,6 +336,40 @@ Collects download statistics from apple
   "vendorNumber": "882223",
   "dbDir": "db"
 }
+```
+
+## Http Ingress source `HttpIngress`
+Requires the `gevent` package
+This source starts a simple http webserver and where you can post metrics to.
+It's intended if you want to push metrics to pollect, instead of using the default pull probes.
+
+```yml
+- type: HttpIngress
+  name: Ingress
+  port: 9005 # Listener port
+  metrics: # You can define multiple metrics
+    sample_metric: # Name of the metric
+      type: counter # Optional, gauge by default, counter will cause the value to increment by X every time
+      labels: # Labels for this metric
+        - host
+```
+
+You can update the metrics using a simple http json post:
+```bash
+curl -X POST http://pollect:9005 \
+-H 'Content-Type: application/json' \
+--data-binary @- << EOF
+{
+    "metrics": {
+      "sample_metric": {
+        "value": 124
+        "labels": {
+          "host": "my-hostname"
+        }
+      }
+    }
+}
+EOF
 ```
 
 # Writers
