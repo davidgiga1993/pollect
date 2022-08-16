@@ -39,7 +39,7 @@ def main():
 
     if args.version:
         from pollect import __version__
-        print(f'Octoploy {__version__}')
+        print(f'Pollect {__version__}')
         return
 
     if args.debug:
