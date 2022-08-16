@@ -1,5 +1,5 @@
 import threading
-from typing import List, Dict
+from typing import List, Dict, Optional
 from wsgiref.simple_server import WSGIServer
 
 from prometheus_client import start_http_server, Gauge, registry, exposition, REGISTRY
@@ -32,7 +32,7 @@ class PrometheusWriter(Writer):
     """
 
     _port: int
-    _httpd: WSGIServer
+    _httpd: Optional[WSGIServer]
 
     def __init__(self, config):
         super().__init__(config)
@@ -85,6 +85,7 @@ class PrometheusWriter(Writer):
                     # New metric
                     existing_metrics[path] = PromMetric(Gauge(path, path, labelnames=value_set.labels))
                 prom_metric = existing_metrics[path]
+                prom_metric.updated = True
                 if len(value_set.labels) > 0:
                     if len(value_obj.label_values) != len(value_set.labels):
                         raise ValueError('Incorrect label count for ' + path + ': Got ' +
