@@ -14,13 +14,12 @@ class SmaPvModbusSource(Source):
         super().__init__(config)
         self._sma = SmaModbus(config['host'], config.get('port', 502))
 
-    def setup(self, global_conf):
-        self._sma.connect()
-
     def shutdown(self):
         self._sma.close()
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+        if not self._sma.is_connected():
+            self._sma.connect()
         base_set = ValueSet()
         base_set.add(Value(self._sma.read(SmaRegisters.REG_TEMP).get_as_base_unit(), name='temp'))
         base_set.add(Value(self._sma.read(SmaRegisters.REG_FREQUENCY).get_as_base_unit(), name='frequency'))
