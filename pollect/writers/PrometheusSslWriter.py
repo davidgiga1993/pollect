@@ -1,4 +1,5 @@
 import logging
+import threading
 from urllib.parse import parse_qs
 
 from gevent import pywsgi
@@ -38,10 +39,15 @@ class PrometheusSslWriter(PrometheusWriter):
 
         logger = logging.getLogger('prom')
         logger.setLevel(logging.ERROR)
-        self._server = pywsgi.WSGIServer(('0.0.0.0', self._port), serve, keyfile=self._key, certfile=self._cert,
-                                         log=logger)
-        self._server.start()
+
+        def start():
+            self._server = pywsgi.WSGIServer(('127.0.0.1', self._port), serve,
+                                             keyfile=self._key, certfile=self._cert,
+                                             log=logger)
+            self._server.start()
+
+        launcher = threading.Thread(target=start)
+        launcher.start()
 
     def stop(self):
         self._server.stop()
-
