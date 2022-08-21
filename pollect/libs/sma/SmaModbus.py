@@ -63,19 +63,25 @@ class SmaModbus(Log):
     Communicates via modbus to SMA PV invertes
     """
     _unit_id: int = -1
+    _is_connected: bool = False
 
     def __init__(self, host: str, port: int = 502):
         super().__init__()
         self._client = ModbusTcpClient(host, port)
+
+    def is_connected(self) -> bool:
+        return self._is_connected
 
     def connect(self):
         self._client.connect()
         # Ask for unit ID
         reply = self._client.read_holding_registers(42109, 4, unit=1)
         self._unit_id = reply.registers[3]
+        self._is_connected = True
 
     def close(self):
         self._client.close()
+        self._is_connected = False
 
     def read(self, reg: Register) -> ValueWithUnit:
         value = u32(self._client.read_holding_registers(reg.id, 2, unit=self._unit_id))

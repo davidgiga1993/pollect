@@ -39,7 +39,7 @@ class ExecutionScheduler:
         schedule.run_all()
         while self._active:
             schedule.run_pending()
-            time.sleep(10)
+            time.sleep(1)
 
     def stop(self):
         """

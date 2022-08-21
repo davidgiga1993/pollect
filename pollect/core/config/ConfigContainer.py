@@ -24,6 +24,9 @@ class ConfigContainer:
         for value in self._data.values():
             yield self._resolve(value)
 
+    def items(self):
+        return self._data.items()
+
     def get(self, key: str, default: any = None, required: bool = False,
             ignore_missing_env: Optional[str] = None) -> Optional[any]:
         if key not in self._data:

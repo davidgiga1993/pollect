@@ -1,14 +1,32 @@
 import setuptools
+import codecs
+import os
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
+
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith('__version__'):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
+
+
 setuptools.setup(
     name='pollect',
-    version='1.1.5',
+    version=get_version('pollect/__init__.py'),
     author='davidgiga1993',
     author_email='david@dev-core.org',
-    description='Metrics collection daemon (similar to collectd)',
+    description='Metrics collection daemon and exporter',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/davidgiga1993/pollect',

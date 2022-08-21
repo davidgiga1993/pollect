@@ -1,7 +1,7 @@
 # pollect - python data collection daemon
 
 pollect is a daemon for collecting system and application metrics in periodical intervals.
-(similar to collectd). It's designed to require very little dependencies to run.
+(similar to collectd). It's designed to require very little dependencies and to be easily customizable.
 
 # Architecture
 
@@ -60,15 +60,14 @@ executors:
   - collection: slowerMetrics
     tickTime: 120
     sources:
-      - type: Http
+      - type: Http # See Http below for more details
         url: https://google.com
-        labels:
+        labels: # Additional labels/tags for the metrics
           # It is also possible to access env variables anywhere
           # in the config
           system: prod
           home: ${HOME}
 ```
-
 
 A more advanced configuration sample can be found in the `pollect.[json|yml]` file.
 
@@ -100,13 +99,14 @@ The following parameters are available for all sources:
 
 ## Http response time `Http`
 
-Measures the http response time
+Measures the http response time in milliseconds
 
-| Param      | Desc                                             |
-|------------|--------------------------------------------------|
-| url        | Url to the web service                           |
-| timeout    | Timeout in seconds (default 15)                  |
-| statusCode | The expected status code (default any non error) |
+| Param      | Desc                                                                                      |
+|------------|-------------------------------------------------------------------------------------------|
+| url        | Url to the web service. Can be a list of strings as well (the url will be added as label) |
+| timeout    | Timeout in seconds (default 15)                                                           |
+| statusCode | The expected status code (default any non error)                                          |
+| proxy      | Http proxy which should be used (defaults to none)                                        |
 
 ## Disk usage `DiskUsage`
 
@@ -338,6 +338,40 @@ Collects download statistics from apple
 }
 ```
 
+## Http Ingress source `HttpIngress`
+Requires the `gevent` package
+This source starts a simple http webserver and where you can post metrics to.
+It's intended if you want to push metrics to pollect, instead of using the default pull probes.
+
+```yml
+- type: HttpIngress
+  name: Ingress
+  port: 9005 # Listener port
+  metrics: # You can define multiple metrics
+    sample_metric: # Name of the metric
+      type: counter # Optional, gauge by default, counter will cause the value to increment by X every time
+      labels: # Labels for this metric
+        - host
+```
+
+You can update the metrics using a simple http json post:
+```bash
+curl -X POST http://pollect:9005 \
+-H 'Content-Type: application/json' \
+--data-binary @- << EOF
+{
+    "metrics": {
+      "sample_metric": {
+        "value": 124
+        "labels": {
+          "host": "my-hostname"
+        }
+      }
+    }
+}
+EOF
+```
+
 # Writers
 
 A writer represents the destination where the collected data is written to.
@@ -351,11 +385,23 @@ Prints the collected data to the stdout
 Exports the data via a prometheus endpoint. The port can be configured using
 `port`as configuration:
 
+```yaml
+writer:
+  type: Prometheus
+  port: 9001
 ```
-"writer": {
-    "type": "Prometheus",
-    "port": 9001
-}
+
+### Https support
+
+Pollect has a custom prometheus exporter which supports https.
+This requires the `gevent` package.
+
+```yaml
+writer:
+  type: PrometheusSsl
+  port: 8000
+  key: key.key
+  cert: cert.pem
 ```
 
 # Multithreading
