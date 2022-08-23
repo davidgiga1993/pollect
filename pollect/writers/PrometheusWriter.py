@@ -2,10 +2,9 @@ import threading
 from typing import List, Dict, Optional
 from wsgiref.simple_server import WSGIServer
 
-from prometheus_client import start_http_server, Gauge, registry, exposition, REGISTRY
+from prometheus_client import Gauge, registry, exposition, REGISTRY
 
 from pollect.core.ValueSet import ValueSet
-from pollect.libs import Utils
 from pollect.writers.Writer import Writer
 
 
@@ -37,7 +36,7 @@ class PrometheusWriter(Writer):
     def __init__(self, config):
         super().__init__(config)
         self._port = self.config.get('port', 8080)
-        self._prom_metrics = {}
+        self._prom_metrics = {}  # type: Dict[str, PromMetric]
 
     def supports_partial_write(self) -> bool:
         return True
@@ -67,8 +66,16 @@ class PrometheusWriter(Writer):
         self._httpd.shutdown()
         self._httpd = None
 
+    def clear(self):
+        """
+        Removes all metrics
+        """
+        for value in self._prom_metrics.values():
+            registry.REGISTRY.unregister(value.metric)
+        self._prom_metrics.clear()
+
     def write(self, data: List[ValueSet], source_ref: object = None):
-        existing_metrics = Utils.put_if_absent(self._prom_metrics, source_ref, {})
+        existing_metrics = self._prom_metrics
 
         for value in existing_metrics.values():
             value.updated = False
@@ -81,10 +88,13 @@ class PrometheusWriter(Writer):
 
                 path = path.replace('-', '_').replace('.', '_').replace('!', '')
 
-                if path not in existing_metrics:
+                prom_metric = existing_metrics.get(path)
+                if prom_metric is None:
                     # New metric
-                    existing_metrics[path] = PromMetric(Gauge(path, path, labelnames=value_set.labels))
-                prom_metric = existing_metrics[path]
+                    prom_metric = PromMetric(Gauge(path, path, labelnames=value_set.labels))
+                    existing_metrics[path] = prom_metric
+
+                prom_metric = prom_metric
                 prom_metric.updated = True
                 if len(value_set.labels) > 0:
                     if len(value_obj.label_values) != len(value_set.labels):
