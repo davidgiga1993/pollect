@@ -1,8 +1,9 @@
 from abc import abstractmethod
-from typing import List
+from typing import List, Optional
 
 from pollect.core.Log import Log
 from pollect.core.ValueSet import ValueSet
+from pollect.sources.Source import Source
 
 
 class Writer(Log):
@@ -35,7 +36,7 @@ class Writer(Log):
         """
 
     @abstractmethod
-    def write(self, data: List[ValueSet], source_ref: object = None):
+    def write(self, data: List[ValueSet], source_ref: Optional[Source] = None):
         """
         Writes the given data
 
