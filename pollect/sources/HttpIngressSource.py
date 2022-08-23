@@ -12,26 +12,33 @@ from pollect.sources.Source import Source
 class MetricDefinition:
     labels: List[str]
     name: str
+    type: str
 
     def __init__(self, name: str, data: Dict[str, any]):
         self.name = name
+        self.type = data.get('type', 'gauge')
         self.labels = data.get('labels', [])
+
+    def is_counter(self) -> bool:
+        return self.type == 'counter'
 
 
 class HttpIngressSource(Source):
     _port: int
-    _server: Optional[pywsgi.WSGIServer]
-    _metrics_definitions: List[MetricDefinition]
+    _server: Optional[pywsgi.WSGIServer] = None
+    _metrics_definitions: Dict[str, MetricDefinition]
     _metrics: Dict[str, ValueSet]
 
     def __init__(self, config):
         super().__init__(config)
         self._port = config['port']
-        self._metrics_definitions = [MetricDefinition(name, metric_def)
-                                     for name, metric_def in config['metrics'].items()]
+        metrics_definitions = [MetricDefinition(name, metric_def)
+                               for name, metric_def in config['metrics'].items()]
         self._metrics = {}
+        self._metrics_definitions = {}
+        for metric_def in metrics_definitions:
+            self._metrics_definitions[metric_def.name] = metric_def
 
-        for metric_def in self._metrics_definitions:
             value_set = ValueSet(labels=metric_def.labels)
             value_set.name = metric_def.name
             self._metrics[metric_def.name] = value_set
@@ -54,15 +61,28 @@ class HttpIngressSource(Source):
             self._server = None
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
-        return self._metrics.values()
+        return list(self._metrics.values())
 
     def _update_metrics(self, data: Dict[str, any]):
         metrics = data['metrics']
         for name, data in metrics.items():
+            metric_def = self._get_metric_def(name)
             labels = data.get('labels', {})
             value = data.get('value', 0)
             value_set = self._get_metric(name)
+
+            if metric_def.is_counter() and len(value_set.values) > 0:
+                # Increment the previous value
+                value += value_set.values[0].value
+
+            self._get_metric(name).values.clear()
             value_set.add(Value(value, label_values=self._map_labels(value_set, labels)))
+
+    def _get_metric_def(self, name: str) -> MetricDefinition:
+        metric_def = self._metrics_definitions.get(name)
+        if metric_def is None:
+            raise ValueError(f'Metric def {name} not found')
+        return metric_def
 
     def _get_metric(self, name: str) -> ValueSet:
         metrics = self._metrics.get(name)
