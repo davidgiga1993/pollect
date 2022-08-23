@@ -22,7 +22,6 @@ class TestPrometheusWriter(TestCase):
     def tearDownClass(cls) -> None:
         TestPrometheusWriter.writer.stop()
 
-
     def setUp(self) -> None:
         self.writer.clear()
 
