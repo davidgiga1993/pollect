@@ -32,11 +32,11 @@ class PlexSource(Source):
             lib_type = section.attrib['type']
             if lib_type == 'movie':
                 library = ElementTree.fromstring(Helper.get_url(self.url + '/library/sections/' + sec_id + '/all'))
-                movies += len(library.getchildren())
+                movies += int(library.attrib['size'])
                 continue
             if lib_type == 'show':
                 library = ElementTree.fromstring(Helper.get_url(self.url + '/library/sections/' + sec_id + '/all'))
-                shows += len(library.getchildren())
+                shows += int(library.attrib['size'])
                 for show in library:
                     # Every entry is a show
                     shows_episodes += int(show.attrib['leafCount'])
@@ -44,7 +44,7 @@ class PlexSource(Source):
                 continue
             if lib_type == 'artist':
                 library = ElementTree.fromstring(Helper.get_url(self.url + '/library/sections/' + sec_id + '/albums'))
-                music_albums += len(library.getchildren())
+                music_albums += int(library.attrib['size'])
                 for show in library:
                     # Every entry is an album
                     music_songs += int(show.attrib['leafCount'])
@@ -74,3 +74,8 @@ class PlexSource(Source):
         data.add(Value(music_albums, name='lib.music.albums'))
         data.add(Value(music_songs, name='lib.music.songs'))
         return data
+
+
+if __name__ == '__main__':
+    source = PlexSource({'type': '', 'url': 'http://192.168.1.10:32400'})
+    source.probe()
