@@ -29,8 +29,16 @@ def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy:
         req.timeout = timeout
 
         with request.urlopen(req) as url:
-            return url.read()
+            status_code = url.getcode()
+            if expected_status is None:
+                # Accept any "ok" status
+                if status_code < 200 or status_code >= 300:
+                    raise ValueError(f'Invalid status code {status_code}')
+                elif status_code != expected_status:
+                    raise ValueError(f'Invalid status code {status_code}')
+            content = url.read()
+            return content
     except HTTPError as e:
-        if expected_status == e.status:
+        if expected_status is None and expected_status == e.status:
             return e.read()
         raise e

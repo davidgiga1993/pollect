@@ -40,4 +40,4 @@ class HttpSource(Source):
             return Value(int(end - start))
         except Exception as e:
             self.log.error(f'Could not probe {url}: {e}')
-            return Value(self.timeout)
+            return Value(self.timeout * 1000)

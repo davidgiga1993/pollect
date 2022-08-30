@@ -9,13 +9,19 @@ from pollect.sources.SmartCtlSource import SmartCtlSource
 class TestHttp(TestCase):
 
     def test_single(self):
-        data = {'url': 'https://github.com', 'type': ''}
+        data = {'url': 'https://echo.getpostman.com/status/200', 'type': ''}
         source = HttpSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
         self.assertEqual(0, len(results.labels))
         self.assertEqual(0, len(results.values[0].label_values))
         self.assertTrue(results.values[0].value < 15000)
+
+    def test_status_codes(self):
+        data = {'url': 'https://echo.getpostman.com/status/500', 'type': ''}
+        source = HttpSource(data)
+        results = source.probe()[0]
+        self.assertEqual(10000, results.values[0].value)
 
     def test_multi(self):
         data = {'url': ['https://github.com',
