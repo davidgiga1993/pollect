@@ -7,6 +7,7 @@ from pollect.core.Log import Log
 
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.core.config.ConfigContainer import ConfigContainer
+from pollect.libs.Utils import chunks
 from pollect.sources.Source import Source
 from pollect.sources.helper.ProbeValue import ProbeValue
 
@@ -221,6 +222,13 @@ class SnmpGetSource(Source):
         :param oids: List of oids which should be probed
         :return: Values
         """
+        if len(oids) > 128:
+            # Only 128 allowed per request
+            values = {}
+            for chunk in chunks(oids, 128):
+                values.update(self._get_values(chunk))
+            return values
+
         args = ['snmpget', '-v1', '-c', self.community, self.host]
         args.extend(oids)
         lines = subprocess.check_output(args).decode('utf-8').splitlines()
