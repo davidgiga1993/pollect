@@ -1,15 +1,12 @@
 from unittest import TestCase
-from unittest.mock import patch
 
 from pollect.sources.HttpSource import HttpSource
-
-from pollect.sources.SmartCtlSource import SmartCtlSource
 
 
 class TestHttp(TestCase):
 
     def test_single(self):
-        data = {'url': 'https://echo.getpostman.com/status/200', 'type': ''}
+        data = {'url': 'https://postman-echo.com/status/200', 'type': ''}
         source = HttpSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
@@ -18,7 +15,7 @@ class TestHttp(TestCase):
         self.assertTrue(results.values[0].value < 15000)
 
     def test_status_codes(self):
-        data = {'url': 'https://echo.getpostman.com/status/500', 'type': ''}
+        data = {'url': 'https://postman-echo.com/status/500', 'type': ''}
         source = HttpSource(data)
         results = source.probe()[0]
         self.assertEqual(10000, results.values[0].value)
