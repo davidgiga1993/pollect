@@ -34,8 +34,8 @@ def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy:
                 # Accept any "ok" status
                 if status_code < 200 or status_code >= 300:
                     raise ValueError(f'Invalid status code {status_code}')
-                elif status_code != expected_status:
-                    raise ValueError(f'Invalid status code {status_code}')
+            elif status_code != expected_status:
+                raise ValueError(f'Invalid status code {status_code}')
             content = url.read()
             return content
     except HTTPError as e:
