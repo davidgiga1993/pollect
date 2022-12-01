@@ -1,9 +1,9 @@
 import os
+import threading
 from time import sleep
 from unittest import TestCase
 
 import requests
-import schedule
 
 from pollect.core.Core import Configuration
 from pollect.core.ExecutionScheduler import ExecutionScheduler
@@ -51,16 +51,16 @@ class TestCore(TestCase):
         config = Configuration(raw_config)
         executors = config.create_executors()
         scheduler = ExecutionScheduler(config, executors)
-        scheduler.create()
-        sleep(1)
-        schedule.run_pending()
 
-        self.assertIsInstance(config.writer, InMemoryWriter)
-        data = config.writer.data
-        self.assertEqual(config.writer.write_calls, 1)
-        self.assertGreater(len(data), 0)
-        self.assertEqual('10', data[0][0].values[0].value)
-        self.assertEqual('1', data[0][1].values[0].value)
+        def run():
+            self.assertIsInstance(config.writer, InMemoryWriter)
+            data = config.writer.data
+            self.assertEqual(config.writer.write_calls, 1)
+            self.assertGreater(len(data), 0)
+            self.assertEqual('10', data[0][0].values[0].value)
+            self.assertEqual('1', data[0][1].values[0].value)
+
+        self._run_and_stop(scheduler, 1, run)
 
     def test_exec(self):
         raw_config = {
@@ -85,13 +85,13 @@ class TestCore(TestCase):
         config = Configuration(raw_config)
         executors = config.create_executors()
         scheduler = ExecutionScheduler(config, executors)
-        scheduler.create()
-        sleep(1)
-        schedule.run_pending()
 
-        self.assertIsInstance(config.writer, InMemoryWriter)
-        data = config.writer.data
-        self.assertGreater(len(data), 0)
+        def run():
+            self.assertIsInstance(config.writer, InMemoryWriter)
+            data = config.writer.data
+            self.assertGreater(len(data), 0)
+
+        self._run_and_stop(scheduler, 1, run)
 
     def test_exec_partial_prometheus(self):
         raw_config = {
@@ -118,14 +118,14 @@ class TestCore(TestCase):
         config = Configuration(raw_config)
         executors = config.create_executors()
         scheduler = ExecutionScheduler(config, executors)
-        scheduler.create()
-        sleep(1)
-        schedule.run_pending()
-        sleep(4)
-        reply = requests.get('http://localhost:9123')
-        scheduler.stop()
-        self.assertIn('github', reply.text)
-        self.assertIn('google', reply.text)
+
+        def run():
+            sleep(4)
+            reply = requests.get('http://localhost:9123')
+            self.assertIn('github', reply.text)
+            self.assertIn('google', reply.text)
+
+        self._run_and_stop(scheduler, 1, run)
 
     def test_exec_parallel(self):
         raw_config = {
@@ -155,13 +155,23 @@ class TestCore(TestCase):
         config = Configuration(raw_config)
         executors = config.create_executors()
         scheduler = ExecutionScheduler(config, executors)
-        scheduler.create()
-        sleep(1)
-        schedule.run_all()
 
-        self.assertIsInstance(config.writer, ParallelInMemoryWriter)
-        # Wait for the jobs to complete
-        sleep(2.5)
-        data = config.writer.data
-        self.assertEqual(config.writer.write_calls, 2)
-        self.assertEqual(len(data), 2)
+        def run():
+            self.assertIsInstance(config.writer, ParallelInMemoryWriter)
+            # Wait for the jobs to complete
+            sleep(2.5)
+            data = config.writer.data
+            self.assertEqual(config.writer.write_calls, 2)
+            self.assertEqual(len(data), 2)
+
+        self._run_and_stop(scheduler, 1, run)
+
+    @staticmethod
+    def _run_and_stop(executor: ExecutionScheduler, wait_time: int, call):
+        executor.create()
+        threading.Thread(target=executor.run).start()
+        sleep(wait_time)
+        try:
+            call()
+        finally:
+            executor.stop()
