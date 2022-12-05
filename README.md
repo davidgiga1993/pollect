@@ -406,11 +406,10 @@ writer:
 
 # Multithreading
 
-By default, pollect executes all sources of a collection in parallel with up to 5 threads. 
-Different collections are executed in separate threads as well, meaning that a long-running probe in one collection can't block another collection. 
-If the writer supports
-partial writes (for example `prometheus`) the result of each source will be immediately available. Writers which do not
-support partial writes will receive the data once all probes have completed.
+By default, pollect executes all sources of a collection in parallel with 5 threads. 
+Different collections are executed in separate threads as well, meaning that multiple long-running probes in one collection can't block another collection. 
+If the writer supports partial writes (for example `prometheus`) the result of each source will be immediately available. 
+Writers which do not support partial writes will receive the data once all probes have completed.
 
 # Extensions
 

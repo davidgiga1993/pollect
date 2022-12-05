@@ -41,11 +41,10 @@ class Configuration:
             self.writer = self.writer_factory.create(writer_config)
 
     def create_executors(self) -> List[Executor]:
-        thread_pool = ThreadPoolExecutor(max_workers=self.thread_count)
-
         executors = []
         source_factory = SourceFactory(self)
         for item in self.config.get('executors'):
+            thread_pool = ThreadPoolExecutor(max_workers=self.thread_count)
             executor = Executor(thread_pool, item, self)
             executor.create_writer(self.writer, self.writer_factory)
             executor.initialize_objects(source_factory)
@@ -113,6 +112,7 @@ class Executor(Log):
         """
         Terminates all sources and writers
         """
+        self.thread_pool.shutdown()
         for source in self._sources:
             source.shutdown()
         self.writer.stop()

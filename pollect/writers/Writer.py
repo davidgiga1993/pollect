@@ -77,6 +77,7 @@ class InMemoryWriter(Writer):
     """
     Appends data to a list
     """
+    data: List[List[ValueSet]]
 
     def __init__(self, config):
         super().__init__(config)

@@ -53,6 +53,17 @@ class ExecutionScheduler:
             schedule.run_pending()
             time.sleep(1)
 
+    def _schedule_execution(self, executor: Executor):
+        """
+        Queues a new executor for execution
+        :param executor: Executor to be queued
+        """
+        exec_queue = self._queues[executor]
+        if exec_queue.qsize() >= 1:
+            # The queue is already nearly full, don't add anything
+            return
+        exec_queue.put(executor.execute)
+
     def _work_on_queue(self, executor: Executor):
         """
         Works on the executor queue
@@ -64,17 +75,6 @@ class ExecutionScheduler:
                 continue
             job_func()
             exec_queue.task_done()
-
-    def _schedule_execution(self, executor: Executor):
-        """
-        Queues a new executor for execution
-        :param executor: Executor to be queued
-        """
-        exec_queue = self._queues[executor]
-        if exec_queue.qsize() >= 1:
-            # The queue is already nearly full, don't add anything
-            return
-        exec_queue.put(executor.execute)
 
     def stop(self):
         """
