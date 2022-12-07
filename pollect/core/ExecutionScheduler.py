@@ -4,11 +4,12 @@ import time
 from typing import List, Dict
 
 import schedule
+from pollect.core.Log import Log
 
 from pollect.core.Core import Configuration, Executor
 
 
-class ExecutionScheduler:
+class ExecutionScheduler(Log):
     """
     Schedules the executors.
     Each executor has its own thread and worker queue
@@ -17,6 +18,7 @@ class ExecutionScheduler:
     _queues: Dict[Executor, queue.Queue]
 
     def __init__(self, config: Configuration, executors: List[Executor]):
+        super().__init__()
         self.config = config
         self.executors = executors
         self._active = False
@@ -52,6 +54,7 @@ class ExecutionScheduler:
         while self._active:
             schedule.run_pending()
             time.sleep(1)
+        self.log.debug('Stopped scheduler execution')
 
     def _schedule_execution(self, executor: Executor):
         """
@@ -62,6 +65,8 @@ class ExecutionScheduler:
         if exec_queue.qsize() >= 1:
             # The queue is already nearly full, don't add anything
             return
+
+        self.log.debug(f'Scheduling execution of {executor.collection_name}')
         exec_queue.put(executor.execute)
 
     def _work_on_queue(self, executor: Executor):
@@ -75,6 +80,7 @@ class ExecutionScheduler:
                 continue
             job_func()
             exec_queue.task_done()
+        self.log.info(f'Stopped working on queue for executor {executor.collection_name}')
 
     def stop(self):
         """

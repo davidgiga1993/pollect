@@ -112,6 +112,7 @@ class Executor(Log):
         """
         Terminates all sources and writers
         """
+        self.log.info(f'Shutting down {self.collection_name}')
         self.thread_pool.shutdown()
         for source in self._sources:
             source.shutdown()
@@ -121,6 +122,7 @@ class Executor(Log):
         """
         Probes all data sources and writes the data using the current writer
         """
+        self.log.debug(f'Executing {self.collection_name}')
         partial_write = self.writer.supports_partial_write()
         futures = []
 
@@ -156,18 +158,19 @@ class Executor(Log):
         :param source: Source
         :return: The probe result data
         """
-        self.log.info(f'Collecting data from {source}')
+        log_tag = f'{self.collection_name}/{source}'
+        self.log.info(f'Collecting data from {log_tag}')
         now = int(time.time())
         try:
             value_sets = source.probe()
             delta = int(time.time()) - now
             if delta > 10:
-                self.log.warning(f'Probing of {source} took {delta} seconds')
+                self.log.warning(f'Probing of {log_tag} took {delta} seconds')
             return value_sets
         except Exception as e:
             # Catch all errors that could occur and ignore them
             traceback.print_exc()
-            self.log.error(f'Error while probing using source {source}: {e}')
+            self.log.error(f'Error while probing using source {log_tag}: {e}')
         return None
 
     def _merge(self, value_sets: List[ValueSet], results: List[ValueSet]):
@@ -196,7 +199,7 @@ class Executor(Log):
             return
 
         # Write the data
-        self.log.info('Writing data...')
+        self.log.debug(f'Writing data for {self.collection_name}')
         try:
             self.writer.write(value_sets, source_ref)
         except Exception as e:
