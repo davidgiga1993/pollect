@@ -29,7 +29,11 @@ class SmartCtlSource(Source):
             if attributes_data:
                 for attr_data in attributes_data['table']:
                     attr_name = attr_data['name']
-                    value = attr_data['value']
+                    value = attr_data.get('raw', {}).get('value')
+                    if value is None:
+                        # Fallback to normalized value
+                        value = attr_data['value']
+
                     if self._include_attribute(attr_name):
                         values.add(Value(int(value), label_values=[attr_name, dev]))
 

@@ -40,7 +40,7 @@ class TestSmartCtl(TestCase):
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
-        self.assertEqual(98, results.values[0].value)
+        self.assertEqual(23, results.values[0].value)
 
     @patch('pollect.sources.SmartCtlSource.subprocess.check_output')
     @patch('pollect.sources.SmartCtlSource.os')
@@ -55,22 +55,22 @@ class TestSmartCtl(TestCase):
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(2, len(results.values))
-        self.assertEqual(98, results.values[0].value)
+        self.assertEqual(23, results.values[0].value)
         self.assertIn('sda', results.values[0].label_values)
-        self.assertEqual(98, results.values[1].value)
+        self.assertEqual(23, results.values[1].value)
         self.assertIn('sdb', results.values[1].label_values)
 
     @patch('pollect.sources.SmartCtlSource.subprocess.check_output')
     @patch('pollect.sources.SmartCtlSource.os')
-    def test_start_padding(self, mock_os, mock_check_output):
+    def test_correct_unit(self, mock_os, mock_check_output):
         mock_os.listdir.return_value = ['sda']
         with open(f'{self._own}/data/sda.json') as f:
             mock_check_output.return_value = f.read().encode('utf-8')
 
-        data = {'attributes': ['Raw_Read_Error_Rate'],
+        data = {'attributes': ['Temperature_Celsius'],
                 'devices': ['sda'],
                 'type': '-'}
         source = SmartCtlSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
-        self.assertEqual(37180691, results.values[0].value)
+        self.assertEqual(32, results.values[0].value)
