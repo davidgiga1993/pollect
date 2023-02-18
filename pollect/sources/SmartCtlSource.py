@@ -22,7 +22,7 @@ class SmartCtlSource(Source):
                     self.devices.append(item)
 
     def _probe(self):
-        data = ValueSet(labels=['dev'])
+        data = ValueSet(labels=['attribute', 'dev'])
         required_attributes = len(self.attributes)
         for dev in self.devices:
             column_count = 0
@@ -47,7 +47,7 @@ class SmartCtlSource(Source):
                     if not value:
                         continue
                     required_attributes -= 1
-                    data.add(Value(int(value.group(0)), label_values=[dev], name=attribute_name))
+                    data.add(Value(int(value.group(0)), label_values=[attribute_name, dev]))
                     if required_attributes == 0:
                         # We already got all the attributes - return
                         break
