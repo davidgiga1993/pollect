@@ -1,0 +1,111 @@
+{
+  "json_format_version": [
+    1,
+    0
+  ],
+  "smartctl": {
+    "version": [
+      7,
+      2
+    ],
+    "svn_revision": "5155",
+    "platform_info": "x86_64-linux-5.15.0-60-generic",
+    "build_info": "(local build)",
+    "argv": [
+      "smartctl",
+      "--json",
+      "/dev/nvme0",
+      "-a"
+    ],
+    "exit_status": 0
+  },
+  "device": {
+    "name": "/dev/nvme0",
+    "info_name": "/dev/nvme0",
+    "type": "nvme",
+    "protocol": "NVMe"
+  },
+  "model_name": "SAMSUNG MZVL2256HCHQ-00B00",
+  "serial_number": "xxxxxxxx",
+  "firmware_version": "GXA7601Q",
+  "nvme_pci_vendor": {
+    "id": 5197,
+    "subsystem_id": 5197
+  },
+  "nvme_ieee_oui_identifier": 9528,
+  "nvme_total_capacity": 256060514304,
+  "nvme_unallocated_capacity": 0,
+  "nvme_controller_id": 6,
+  "nvme_version": {
+    "string": "1.3",
+    "value": 66304
+  },
+  "nvme_number_of_namespaces": 1,
+  "nvme_namespaces": [
+    {
+      "id": 1,
+      "size": {
+        "blocks": 500118192,
+        "bytes": 256060514304
+      },
+      "capacity": {
+        "blocks": 500118192,
+        "bytes": 256060514304
+      },
+      "utilization": {
+        "blocks": 478669784,
+        "bytes": 245078929408
+      },
+      "formatted_lba_size": 512,
+      "eui64": {
+        "oui": 9528,
+        "ext_id": 808018026162
+      }
+    }
+  ],
+  "user_capacity": {
+    "blocks": 500118192,
+    "bytes": 256060514304
+  },
+  "logical_block_size": 512,
+  "local_time": {
+    "time_t": 1676729304,
+    "asctime": "Sat Feb 18 14:08:24 2023 UTC"
+  },
+  "smart_status": {
+    "passed": true,
+    "nvme": {
+      "value": 0
+    }
+  },
+  "nvme_smart_health_information_log": {
+    "critical_warning": 0,
+    "temperature": 36,
+    "available_spare": 100,
+    "available_spare_threshold": 10,
+    "percentage_used": 0,
+    "data_units_read": 3759,
+    "data_units_written": 576277,
+    "host_reads": 38179,
+    "host_writes": 1994152,
+    "controller_busy_time": 39,
+    "power_cycles": 3,
+    "power_on_hours": 5,
+    "unsafe_shutdowns": 0,
+    "media_errors": 0,
+    "num_err_log_entries": 0,
+    "warning_temp_time": 0,
+    "critical_comp_time": 0,
+    "temperature_sensors": [
+      36,
+      36
+    ]
+  },
+  "temperature": {
+    "current": 36
+  },
+  "power_cycle_count": 3,
+  "power_on_time": {
+    "hours": 5
+  }
+}
