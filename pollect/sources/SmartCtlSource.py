@@ -29,8 +29,12 @@ class SmartCtlSource(Source):
             if attributes_data:
                 for attr_data in attributes_data['table']:
                     attr_name = attr_data['name']
-                    value = attr_data.get('raw', {}).get('value')
-                    if value is None:
+                    # Use string since it's already converted into the correct format
+                    value = attr_data.get('raw', {}).get('string')
+                    if value:
+                        # Convert the string into a regular number
+                        value = int(value.split(' ')[0].strip())
+                    else:
                         # Fallback to normalized value
                         value = attr_data['value']
 
