@@ -163,10 +163,11 @@ Wrapper for the linux `smartctl` tool. Collects SMART data
 
 Wrapper for the linux `sensors` utility. Collects sensor data such as temps and voltages
 
-| Param   | Desc                                                 |
-|---------|------------------------------------------------------|
-| include | Name of chips which should be included. Can be empty |
-| exclude | Name of chips which should be excluded. Can be empty |
+| Param        | Desc                                                                                         |
+|--------------|----------------------------------------------------------------------------------------------|
+| include      | Name of chips which should be included. Can be empty                                         |
+| exclude      | Name of chips which should be excluded. Can be empty                                         |
+| useBaseUnits | Set to `False` to report the raw values in their reported unit (for example mV instead of V) |
 
 ## DNS server statistics `Bind`
 
@@ -339,6 +340,7 @@ Collects download statistics from apple
 ```
 
 ## Http Ingress source `HttpIngress`
+
 Requires the `gevent` package
 This source starts a simple http webserver and where you can post metrics to.
 It's intended if you want to push metrics to pollect, instead of using the default pull probes.
@@ -355,6 +357,7 @@ It's intended if you want to push metrics to pollect, instead of using the defau
 ```
 
 You can update the metrics using a simple http json post:
+
 ```bash
 curl -X POST http://pollect:9005 \
 -H 'Content-Type: application/json' \
@@ -406,9 +409,11 @@ writer:
 
 # Multithreading
 
-By default, pollect executes all sources of a collection in parallel with 5 threads. 
-Different collections are executed in separate threads as well, meaning that multiple long-running probes in one collection can't block another collection. 
-If the writer supports partial writes (for example `prometheus`) the result of each source will be immediately available. 
+By default, pollect executes all sources of a collection in parallel with 5 threads.
+Different collections are executed in separate threads as well, meaning that multiple long-running probes in one
+collection can't block another collection.
+If the writer supports partial writes (for example `prometheus`) the result of each source will be immediately
+available.
 Writers which do not support partial writes will receive the data once all probes have completed.
 
 # Extensions

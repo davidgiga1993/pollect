@@ -60,7 +60,7 @@ class SmaRegisters:
 
 class SmaModbus(Log):
     """
-    Communicates via modbus to SMA PV invertes
+    Communicates via modbus to SMA PV inverter
     """
     _unit_id: int = -1
     _is_connected: bool = False
