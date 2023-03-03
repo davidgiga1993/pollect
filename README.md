@@ -220,6 +220,11 @@ Collects plex mediaserver statistics. This requires local IP addresses to be all
 |-------|-----------------------------------------------------------|
 | url   | URL to plex. Use the IP of the NIC instead of `localhost` |
 
+## Plex server `Zfs`
+
+Provides simple ZFS pool sizing and performance metrics.
+
+
 ## Fritzbox WAN `Fritzbox`
 
 Connects to the fritzbox api and collects WAN statistics. Requires
