@@ -29,7 +29,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', dest='version', action='store_true',
                         help='Prints the current version')
-    parser.add_argument('-d', '--debug', dest='debug', action='store_true')
+    parser.add_argument('-d', '--debug', dest='debug', action='store_true',
+                        help='Shortcut for --log-level debug')
+    parser.add_argument('--log-level', dest='log_level', default='info',
+                        choices=['info', 'debug', 'warning', 'error'],
+                        help="Sets the log level, info by default (if --debug isn't set)")
     parser.add_argument('-c', '--config', dest='config', default='config',
                         help='Configuration file which should be read. If no file extension is given '
                              'both (yml and json) will be checked.')
@@ -42,8 +46,10 @@ def main():
         print(f'Pollect {__version__}')
         return
 
+    log_level = args.log_level
     if args.debug:
-        Log.set_debug()
+        log_level = 'debug'
+    Log.set_level(log_level)
 
     scheduler = None
 

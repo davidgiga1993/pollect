@@ -40,5 +40,12 @@ class Log:
             self.log = log
 
     @classmethod
-    def set_debug(cls):
-        cls.log_level = logging.DEBUG
+    def set_level(cls, log_level: str):
+        if log_level == 'debug':
+            cls.log_level = logging.DEBUG
+        elif log_level == 'info':
+            cls.log_level = logging.INFO
+        elif log_level == 'warning':
+            cls.log_level = logging.WARNING
+        elif log_level == 'error':
+            cls.log_level = logging.ERROR
