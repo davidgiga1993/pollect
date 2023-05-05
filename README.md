@@ -380,6 +380,16 @@ curl -X POST http://pollect:9005 \
 EOF
 ```
 
+
+## Certificate source `Certificate`
+Returns the expiry date of a https certificate. Requires `openssl` binary and `pyOpenSSL`.
+
+```yml
+- type: Certificate
+  name: cert
+  url: https://google.com
+```
+
 # Writers
 
 A writer represents the destination where the collected data is written to.
