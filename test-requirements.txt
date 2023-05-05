@@ -2,3 +2,4 @@ psutil
 schedule
 requests
 gevent
+pyOpenSSL
