@@ -1,4 +1,5 @@
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -24,8 +25,9 @@ def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy:
     session = requests.Session()
     proxies = None
     if proxy == '':
+        parsed = urlparse(url)
         proxies = {
-            'no_proxy': url
+            'no_proxy': parsed.hostname
         }
         pass
     elif proxy is not None:
