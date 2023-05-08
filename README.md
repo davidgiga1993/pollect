@@ -101,12 +101,12 @@ The following parameters are available for all sources:
 
 Measures the http response time in milliseconds
 
-| Param      | Desc                                                                                      |
-|------------|-------------------------------------------------------------------------------------------|
-| url        | Url to the web service. Can be a list of strings as well (the url will be added as label) |
-| timeout    | Timeout in seconds (default 15)                                                           |
-| statusCode | The expected status code (default any non error)                                          |
-| proxy      | Http proxy which should be used (defaults to none)                                        |
+| Param      | Desc                                                                                                                                     |
+|------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| url        | Url to the web service. Can be a list of strings as well (the url will be added as label)                                                |
+| timeout    | Timeout in seconds (default 15)                                                                                                          |
+| statusCode | The expected status code (default any non error)                                                                                         |
+| proxy      | Http proxy which should be used (defaults to none respecting environment variables. Set to '' to use no proxy regardless of environment) |
 
 ## Disk usage `DiskUsage`
 
