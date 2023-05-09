@@ -1,6 +1,7 @@
 from typing import Optional
-from urllib import request
-from urllib.error import HTTPError
+from urllib.parse import urlparse
+
+import requests
 
 
 def remove_empty_list(list_obj):
@@ -21,24 +22,24 @@ def accept(include, exclude, value):
 
 
 def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy: Optional[str] = None):
-    try:
-        req = request.Request(url)
-        if proxy is not None:
-            req.set_proxy(proxy, 'http')
-            req.set_proxy(proxy, 'https')
-        req.timeout = timeout
+    proxies = None
+    if proxy == '':
+        parsed = urlparse(url)
+        proxies = {
+            'no_proxy': parsed.hostname
+        }
+    elif proxy is not None:
+        proxies = {
+            'http': proxy,
+            'https': proxy
+        }
 
-        with request.urlopen(req) as url:
-            status_code = url.getcode()
-            if expected_status is None:
-                # Accept any "ok" status
-                if status_code < 200 or status_code >= 300:
-                    raise ValueError(f'Invalid status code {status_code}')
-            elif status_code != expected_status:
-                raise ValueError(f'Invalid status code {status_code}')
-            content = url.read()
-            return content
-    except HTTPError as e:
-        if expected_status is None and expected_status == e.status:
-            return e.read()
-        raise e
+    response = requests.get(url, timeout=(timeout, timeout), proxies=proxies)
+    status_code = response.status_code
+    if expected_status is None:
+        # Accept any "ok" status
+        if status_code < 200 or status_code >= 300:
+            raise ValueError(f'Invalid status code {status_code}')
+    elif status_code != expected_status:
+        raise ValueError(f'Invalid status code {status_code}')
+    return response.text

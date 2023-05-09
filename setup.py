@@ -35,7 +35,8 @@ setuptools.setup(
     install_requires=[
         'schedule',
         'prometheus-client',
-        'PyYAML'
+        'PyYAML',
+        'requests'
     ],
     entry_points={
         'console_scripts': ['pollect=pollect.Pollect:main'],
