@@ -22,7 +22,6 @@ def accept(include, exclude, value):
 
 
 def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy: Optional[str] = None):
-    session = requests.Session()
     proxies = None
     if proxy == '':
         parsed = urlparse(url)
@@ -36,7 +35,7 @@ def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy:
             'https': proxy
         }
 
-    response = session.get(url, timeout=(timeout, timeout), proxies=proxies)
+    response = requests.get(url, timeout=(timeout, timeout), proxies=proxies)
     status_code = response.status_code
     if expected_status is None:
         # Accept any "ok" status
