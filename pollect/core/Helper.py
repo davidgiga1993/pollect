@@ -28,7 +28,6 @@ def get_url(url, timeout: int = 5, expected_status: Optional[int] = None, proxy:
         proxies = {
             'no_proxy': parsed.hostname
         }
-        pass
     elif proxy is not None:
         proxies = {
             'http': proxy,
