@@ -18,27 +18,27 @@ class CertificateSource(Source):
 
     def __init__(self, config):
         super().__init__(config)
-        self.url = config.get('url')
+        self.host = config.get('host')
+        self.port = config.get('port')
+        url = config.get('url')
+        if url is not None:
+            parsed_url = urlparse(url)
+            self.host = str(parsed_url.hostname)
+            self.port = parsed_url.port
+            if self.port is None:
+                if parsed_url.scheme == 'https':
+                    self.port = 443
+                elif parsed_url.scheme == 'http':
+                    self.port = 80
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
         value_set = ValueSet()
-        expire_days = self.get_expire_days(self.url)
+        expire_days = self.get_expire_days(self.host, self.port)
         value_set.add(Value(expire_days, name='cert_expire_days'))
         return value_set
 
     @staticmethod
-    def get_expire_days(url: str) -> int:
-        parsed_url = urlparse(url)
-        host = parsed_url.hostname
-        port = parsed_url.port
-        if port is None:
-            if parsed_url.scheme == 'https':
-                port = 443
-            elif parsed_url.scheme == 'http':
-                port = 80
-            else:
-                raise ValueError(f'Could not determine port from scheme: {parsed_url.scheme}')
-
+    def get_expire_days(host: str, port: int) -> int:
         args = ['openssl', 's_client', '-connect',
                 host + ':' + str(port), '-servername', host,
                 '-certform', 'pem']
