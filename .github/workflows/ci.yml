@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python 3.9
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - name: Install dependencies
@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: "3.x"
       - name: Install dependencies
@@ -89,7 +89,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           # list of Docker images to use as base name for tags
           images: ${{ env.DOCKER_IMAGE }}
@@ -101,7 +101,7 @@ jobs:
             type=semver,pattern={{major}}
 
       - name: Build and push Docker images
-        uses: docker/build-push-action@v2.7.0
+        uses: docker/build-push-action@v4
         with:
           context: .
           push: true
