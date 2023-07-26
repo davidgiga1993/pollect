@@ -49,6 +49,7 @@ def main():
     log_level = args.log_level
     if args.debug:
         log_level = 'debug'
+    Log.setup()
     Log.set_level(log_level)
 
     scheduler = None

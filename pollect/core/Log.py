@@ -32,11 +32,7 @@ class Log:
             if name is None:
                 name = self.__class__.__name__
             log = logging.getLogger(name)
-            if not log.hasHandlers():
-                handler = logging.StreamHandler(stream=sys.stdout)
-                handler.setFormatter(ColorFormatter())
-                log.addHandler(handler)
-                log.setLevel(Log.log_level)
+            log.setLevel(Log.log_level)
             self.log = log
 
     @classmethod
@@ -49,3 +45,11 @@ class Log:
             cls.log_level = logging.WARNING
         elif log_level == 'error':
             cls.log_level = logging.ERROR
+
+    @classmethod
+    def setup(cls):
+        log = logging.root
+        handler = logging.StreamHandler(stream=sys.stdout)
+        handler.setFormatter(ColorFormatter())
+        log.handlers.clear()
+        log.addHandler(handler)
