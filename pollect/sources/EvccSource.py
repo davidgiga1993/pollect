@@ -24,6 +24,7 @@ class EvccSource(Source):
 
         other_metrics = ValueSet()
         loadpoint = ValueSet(labels=['title'])
+
         # Find loadpoint names and indices
         loadpoint_names: Dict[int, str] = {}
         for key, value in data.items():
@@ -62,8 +63,3 @@ class EvccSource(Source):
 
     def _is_metric(self, value: any) -> bool:
         return isinstance(value, float) or isinstance(value, int) or isinstance(value, bool)
-
-
-if __name__ == '__main__':
-    out = EvccSource({'host': 'pi4:7070', 'type': ''}).probe()
-    print(f'{out}')
