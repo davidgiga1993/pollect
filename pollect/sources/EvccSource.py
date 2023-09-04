@@ -49,7 +49,7 @@ class EvccSource(Source):
         return [loadpoint, other_metrics]
 
     def _get_data(self) -> Dict[str, any]:
-        with closing(create_connection(f'wss://{self._host}/ws')) as conn:
+        with closing(create_connection(f'ws://{self._host}/ws')) as conn:
             data = conn.recv()
             return json.loads(data)
 
