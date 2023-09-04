@@ -224,11 +224,19 @@ Collects plex mediaserver statistics. This requires local IP addresses to be all
 
 Provides simple ZFS pool sizing and performance metrics.
 
-
 ## Fritzbox WAN `Fritzbox`
 
 Connects to the fritzbox api and collects WAN statistics. Requires
 the [fritzconnection](https://pypi.org/project/fritzconnection) package.
+
+## EVCC `Evcc`
+
+Exposes the values shown in the EVCC web-ui as metrics.
+Requires the `websocket-client` package.
+
+| Param |     | Desc                                                       |
+|-------|:----|------------------------------------------------------------|
+| host  |     | Host and port of the EVCC instance (e.g. `localhost:7070`) |
 
 ## Viessmann API `Viessmann`
 
@@ -380,8 +388,8 @@ curl -X POST http://pollect:9005 \
 EOF
 ```
 
-
 ## Certificate source `Certificate`
+
 Returns the expiry date of a https certificate. Requires `openssl` binary and `pyOpenSSL`.
 
 ```yml
@@ -463,15 +471,17 @@ class MultiRandomSource(Source):
 config.json:
 
 ```json
-"sources": [
 {
-"type": "extensions.SingleRandom",
-"max": 100
-},
-{
-"type": "extensions.MultiRandom"
+  "sources": [
+	{
+	  "type": "extensions.SingleRandom",
+	  "max": 100
+	},
+	{
+	  "type": "extensions.MultiRandom"
+	}
+  ]
 }
-]
 ```
 
 A similar principle is used for the writers. Take a look at the `sources`and `writers` folders for more examples.
