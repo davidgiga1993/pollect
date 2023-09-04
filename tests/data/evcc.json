@@ -1,0 +1,113 @@
+{
+  "pvConfigured": true,
+  "bufferSoc": 0,
+  "loadpoints.0.pvAction": "inactive",
+  "sponsorTokenExpires": 0,
+  "loadpoints.0.sessionCo2PerKWh": null,
+  "loadpoints.0.targetTime": null,
+  "loadpoints.0.connected": true,
+  "tariffGrid": 0.5547,
+  "gridConfigured": true,
+  "vehicles":
+  [
+	"Taycan"
+  ],
+  "loadpoints.0.phaseAction": "inactive",
+  "loadpoints.0.guardAction": "inactive",
+  "loadpoints.0.connectedDuration": 0,
+  "loadpoints.0.enabled": true,
+  "savingsSelfConsumptionCharged": 28.711,
+  "savingsEffectivePrice": 0.15905,
+  "releaseNotes": "<h1>0.119.4</h1>\n<h2 dir=\"auto\">Changelog</h2>\n<ul dir=\"auto\">\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/a70b761bb36d6037f8d1958b5d958d7bfd05787e/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/a70b761bb36d6037f8d1958b5d958d7bfd05787e\"><tt>a70b761</tt></a>  Cupra: support nickname from api (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1879080900\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9701\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9701/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9701\">#9701</a>)</li>\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/216dcba3de6a241fcdadd0d0d6adebef424d4943/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/216dcba3de6a241fcdadd0d0d6adebef424d4943\"><tt>216dcba</tt></a> Add carbonintensity.org.uk (National Grid ESO) CO2 forecasting (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1851739512\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9387\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9387/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9387\">#9387</a>)</li>\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/5cc4c146ee13f52e2aa68f13d241343eae4c14f4/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/5cc4c146ee13f52e2aa68f13d241343eae4c14f4\"><tt>5cc4c14</tt></a> Restore vehicle onIdentify behavior for targetSoc from yaml (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1878733865\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9685\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9685/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9685\">#9685</a>)</li>\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/b5b490fbca7416d0192d3f6a393ba7b05c4883c4/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/b5b490fbca7416d0192d3f6a393ba7b05c4883c4\"><tt>b5b490f</tt></a> Revert \"VAG: simplify token refresh handling (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1879079131\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9700\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9700/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9700\">#9700</a>)\"</li>\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/c3ceaab8f807bf58cd9c34844921d3117ec58371/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/c3ceaab8f807bf58cd9c34844921d3117ec58371\"><tt>c3ceaab</tt></a> Skoda: fix retrieving list of vehicles (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1879053364\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9698\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9698/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9698\">#9698</a>)</li>\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/5db7bf5cc35b75004ce5abe24584ade71206c43f/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/5db7bf5cc35b75004ce5abe24584ade71206c43f\"><tt>5db7bf5</tt></a> VAG: simplify token refresh handling (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1879079131\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9700\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9700/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9700\">#9700</a>)</li>\n<li><a class=\"commit-link\" data-hovercard-type=\"commit\" data-hovercard-url=\"https://github.com/evcc-io/evcc/commit/5b994e729e4e9e3597758c6e18fa5a629cb49488/hovercard\" href=\"https://github.com/evcc-io/evcc/commit/5b994e729e4e9e3597758c6e18fa5a629cb49488\"><tt>5b994e7</tt></a> Wallbe: remove broken charge timer (<a class=\"issue-link js-issue-link\" data-error-text=\"Failed to load title\" data-id=\"1878994065\" data-permission-text=\"Title is private\" data-url=\"https://github.com/evcc-io/evcc/issues/9694\" data-hovercard-type=\"pull_request\" data-hovercard-url=\"/evcc-io/evcc/pull/9694/hovercard\" href=\"https://github.com/evcc-io/evcc/pull/9694\">#9694</a>)</li>\n</ul>",
+  "savingsSince": "2023-09-01T10:15:10+02:00",
+  "loadpoints.0.maxCurrent": 10,
+  "auth":
+  {
+	"vehicles":
+	{}
+  },
+  "gridCurrents":
+  [
+	-6.507000000000001,
+	4.1690000000000005,
+	-4.551
+  ],
+  "loadpoints.0.charging": true,
+  "availableVersion": "0.119.4",
+  "loadpoints.0.vehicleFeatureOffline": true,
+  "loadpoints.0.mode": "pv",
+  "gridPower": -1607.5,
+  "loadpoints.0.title": "Garage",
+  "loadpoints.0.pvRemaining": 0,
+  "loadpoints.0.targetSoc": 80,
+  "loadpoints.0.vehicleCapacity": 83.7,
+  "loadpoints.0.vehicleSoc": 50,
+  "loadpoints.0.vehicleTargetSoc": 0,
+  "loadpoints.0.chargeCurrents":
+  [
+	10.200000000000001,
+	0,
+	0
+  ],
+  "prioritySoc": 0,
+  "loadpoints.0.vehiclePresent": true,
+  "loadpoints.0.chargePower": 2373,
+  "pvEnergy": 35662,
+  "siteTitle": "Home",
+  "loadpoints.0.phaseRemaining": 0,
+  "homePower": 1469.5,
+  "tariffFeedIn": 0.1079,
+  "loadpoints.0.priority": 0,
+  "gridEnergy": 11735,
+  "loadpoints.0.planActive": false,
+  "batteryConfigured": false,
+  "residualPower": -690,
+  "loadpoints.0.guardRemaining": 0,
+  "loadpoints.0.vehicleTitle": "Taycan",
+  "loadpoints.0.vehicleDetectionActive": false,
+  "smartCostLimit": 0,
+  "loadpoints.0.chargerIcon": null,
+  "loadpoints.0.vehicleRange": 0,
+  "pv":
+  [
+	{
+	  "power": 5450,
+	  "energy": 35661.713
+	}
+  ],
+  "loadpoints.0.sessionPrice": 1.0501,
+  "loadpoints.0.chargedEnergy": 9732,
+  "bufferStartSoc": 0,
+  "loadpoints.0.targetEnergy": 0,
+  "loadpoints.0.vehicleIcon": "car",
+  "loadpoints.0.chargeCurrent": 10,
+  "loadpoints.0.sessionSolarPercentage": 100,
+  "savingsTotalCharged": 32.432,
+  "savingsGridCharged": 3.7214,
+  "currency": "EUR",
+  "loadpoints.0.minCurrent": 2.2,
+  "loadpoints.0.phasesConfigured": null,
+  "loadpoints.0.phasesActive": 1,
+  "loadpoints.0.sessionPricePerKWh": 0.1079,
+  "loadpoints.0.chargeDuration": 14550,
+  "loadpoints.0.vehicleIdentity": "00:18:87:00:98:92",
+  "loadpoints.0.phasesEnabled": 1,
+  "loadpoints.0.chargerFeatureIntegratedDevice": false,
+  "loadpoints.0.chargerFeatureHeating": false,
+  "tariffEffectivePrice": 0.1079,
+  "smartCostType": "pricestatic",
+  "version": "0.119.3",
+  "sponsor": "Mock",
+  "gridPowers":
+  [
+	-1514.4,
+	932.4000000000001,
+	-1025.5
+  ],
+  "greenShare": 1,
+  "savingsAmount": 12.81,
+  "loadpoints.0.sessionEnergy": 9732,
+  "savingsSelfConsumptionPercent": 88.525,
+  "loadpoints.0.minSoc": 0,
+  "pvPower": 5450
+}
