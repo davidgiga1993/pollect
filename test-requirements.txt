@@ -3,3 +3,4 @@ schedule
 requests
 gevent
 pyOpenSSL
+websocket-client
