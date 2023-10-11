@@ -41,13 +41,13 @@ class PrometheusSslWriter(PrometheusWriter):
         logger.setLevel(logging.ERROR)
 
         def start():
-            self._server = pywsgi.WSGIServer(('127.0.0.1', self._port), serve,
+            self._server = pywsgi.WSGIServer(('0.0.0.0', self._port), serve,
                                              keyfile=self._key, certfile=self._cert,
                                              log=logger)
-            self._server.start()
+            self._server.serve_forever()
 
         launcher = threading.Thread(target=start)
         launcher.start()
 
     def stop(self):
-        self._server.stop()
+        self._server.close()
