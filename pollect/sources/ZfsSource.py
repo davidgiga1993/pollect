@@ -7,6 +7,10 @@ from pollect.sources.Source import Source
 
 
 class ZpoolIostat:
+    """
+    IO stats for all zpools
+    """
+
     def __init__(self):
         self._ticks = 0
         self._active = False
@@ -87,6 +91,7 @@ class ZfsSource(Source):
     def __init__(self, config):
         super().__init__(config)
         self._iostats = ZpoolIostat()
+        self._ticks = 0
 
     def setup(self, global_conf):
         self._iostats.start()
@@ -95,5 +100,13 @@ class ZfsSource(Source):
         self._iostats.stop()
 
     def _probe(self) -> List[ValueSet]:
-        self.log.info('Probing...')
+        self._ticks += 1
+        if self._ticks > 120:
+            # Restart in case we got more or less zfs pools since the
+            # zpool iostats command doesn't catch that
+            self.log.info('Restarting zpool iostats')
+            self._iostats.stop()
+            self._iostats.start()
+            self._ticks = 0
+
         return self._iostats.get_data()
