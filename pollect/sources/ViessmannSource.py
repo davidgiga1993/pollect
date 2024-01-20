@@ -145,5 +145,5 @@ class ViessmannSource(Source):
         main_set.add(Value(program_normal, name='program_normal_temp'))
 
         # Remove any "None" values
-        main_set.values = [v for v in main_set.values if v is not None]
+        main_set.values = [v for v in main_set.values if v.value is not None]
         return [main_set, compressor_phase_set]
