@@ -130,7 +130,7 @@ class ViessmannSource(Source):
                                    .get_property_value('status') != 'off'
         main_set.add(Value(dhw_circulation_pump, name='hot_water_circulation_pump'))
 
-        # Pumpe Warmwasserspeicher
+        # Pump warm water storage
         dhw_pump_primary = features.get_feature('heating.dhw.pumps.primary') \
                                .get_property_value('status') != 'off'
         main_set.add(Value(dhw_pump_primary, name='hot_water_primary_pump'))
@@ -144,4 +144,6 @@ class ViessmannSource(Source):
             .get_property_value('temperature')
         main_set.add(Value(program_normal, name='program_normal_temp'))
 
+        # Remove any "None" values
+        main_set.values = [v for v in main_set.values if v is not None]
         return [main_set, compressor_phase_set]
