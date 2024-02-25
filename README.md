@@ -405,7 +405,6 @@ fault conditions that prevent charging.
 
 ```yml
 - type: Pmcc
-  name: garage
   url: https://....
   password: <customer service password>
 ```

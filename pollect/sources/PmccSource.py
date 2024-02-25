@@ -24,7 +24,9 @@ class PmccSource(Source):
 
         general = ValueSet()
         temperature = ValueSet(labels=['sensor'])
+        temperature.name = 'temp'
         errors = ValueSet(labels=['code'])
+        errors.name = 'errors'
 
         cpu_temp = self._get('/v1/api/SelfTest/Temp_CPU/properties')['temperature']
         temperature.add(Value(cpu_temp, label_values=['cpu']))
