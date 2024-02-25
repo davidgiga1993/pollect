@@ -5,3 +5,4 @@ __pycache__
 /dist
 /pollect.egg-info
 viessmann_token.json
+/tmp

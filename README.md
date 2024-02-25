@@ -398,6 +398,18 @@ Returns the expiry date of a https certificate. Requires `openssl` binary and `p
   url: https://google.com
 ```
 
+## PMCC source `Pmcc`
+
+Exports diagnostics metrics of the PMCC device. This allows easy detection of V2G timeouts and other
+fault conditions that prevent charging.
+
+```yml
+- type: Pmcc
+  name: garage
+  url: https://....
+  password: <customer service password>
+```
+
 # Writers
 
 A writer represents the destination where the collected data is written to.
