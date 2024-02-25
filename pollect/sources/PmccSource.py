@@ -24,12 +24,10 @@ class PmccSource(Source):
 
         general = ValueSet()
         temperature = ValueSet(labels=['sensor'])
-        temperature.name = 'temp'
         errors = ValueSet(labels=['code'])
-        errors.name = 'errors'
 
         cpu_temp = self._get('/v1/api/SelfTest/Temp_CPU/properties')['temperature']
-        temperature.add(Value(cpu_temp, label_values=['cpu']))
+        temperature.add(Value(cpu_temp, name='temp', label_values=['cpu']))
 
         free_memory = self._get('/v1/api/SelfTest/RAM/properties')['ramFree']
         general.add(Value(free_memory, name='free_memory'))
@@ -42,9 +40,9 @@ class PmccSource(Source):
         general.add(Value(canbus['propM4TempLCD'], name='temp_lcd'))
 
         temp_data = json.loads(canbus['propjIcanTempChanged'])
-        temperature.add(Value(temp_data['Internal_Micro'], label_values=['uc']))
-        temperature.add(Value(temp_data['Internal_Relay'], label_values=['relay1']))
-        temperature.add(Value(temp_data['Internal_Relay_2'], label_values=['relay2']))
+        temperature.add(Value(temp_data['Internal_Micro'], name='temp', label_values=['uc']))
+        temperature.add(Value(temp_data['Internal_Relay'], name='temp', label_values=['relay1']))
+        temperature.add(Value(temp_data['Internal_Relay_2'], name='temp', label_values=['relay2']))
 
         # Collect error codes
         error_map = {
@@ -60,7 +58,7 @@ class PmccSource(Source):
                 error_states[error_map[error_code]] = 1
 
         for key, value in error_states.items():
-            errors.add(Value(value, label_values=[key]))
+            errors.add(Value(value, name='errors', label_values=[key]))
         return [general, temperature, errors]
 
     def _get(self, path: str, nested_json: bool = False) -> Dict[str, any]:
@@ -123,4 +121,3 @@ class PmccSource(Source):
         json_str = base64.b64decode(base64_str)
         jwt_content = json.loads(json_str)
         self._expiry = jwt_content['exp']
-
