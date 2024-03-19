@@ -41,8 +41,8 @@ int count_network_bytes_per_ip(struct xdp_md *ctx)
 			{
 				return 1;
 			}
-			ip_and_byte->srcIp = (unsigned int) ip_packet->saddr;
-			ip_and_byte->dstIp = (unsigned int) ip_packet->daddr;
+			ip_and_byte->srcIp = (unsigned int) bpf_ntohl(ip_packet->saddr);
+			ip_and_byte->dstIp = (unsigned int) bpf_ntohl(ip_packet->daddr);
 			ip_and_byte->bytes = ethernet_size_in_bytes;
 			ip_and_byte->protocol = ip_packet->protocol;
 			events.ringbuf_submit(ip_and_byte, 0);
