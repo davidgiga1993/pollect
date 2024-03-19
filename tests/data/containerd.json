@@ -1,0 +1,254 @@
+{
+  "ID": "093df0dd4e350e7d7160186ab3a50edf68f7cb6a376b84cc4965ee206ae09717",
+  "Labels": {
+	"app.kubernetes.io/name": "csi-node-driver",
+	"controller-revision-hash": "56cdcdbc74",
+	"io.cri-containerd.kind": "sandbox",
+	"io.kubernetes.pod.name": "csi-node-driver-9bt4c",
+	"io.kubernetes.pod.namespace": "calico-system",
+	"io.kubernetes.pod.uid": "95b416f3-d739-402b-b074-2b23863ce2c4",
+	"k8s-app": "csi-node-driver",
+	"name": "csi-node-driver",
+	"pod-template-generation": "1"
+  },
+  "Image": "dkr.ecr.eu-central-1.amazonaws.com/eks/pause:3.5",
+  "Runtime": {
+	"Name": "io.containerd.runc.v2",
+	"Options": {
+	  "type_url": "containerd.runc.v1.Options",
+	  "value": "SAE="
+	}
+  },
+  "SnapshotKey": "093df0dd4e350e7d7160186ab3a50edf68f7cb6a376b84cc4965ee206ae09717",
+  "Snapshotter": "overlayfs",
+  "CreatedAt": "2024-03-15T11:56:05.619301552Z",
+  "UpdatedAt": "2024-03-15T11:56:06.242927275Z",
+  "Extensions": {
+	"io.cri-containerd.sandbox.metadata": {
+	  "type_url": "github.com/containerd/cri/pkg/store/sandbox/Metadata",
+	  "value": ""
+	}
+  },
+  "SandboxID": "",
+  "Spec": {
+	"ociVersion": "1.1.0-rc.1",
+	"process": {
+	  "user": {
+		"uid": 65535,
+		"gid": 65535,
+		"additionalGids": [
+		  65535
+		]
+	  },
+	  "args": [
+		"/pause"
+	  ],
+	  "env": [
+		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	  ],
+	  "cwd": "/",
+	  "capabilities": {
+		"bounding": [
+		  "CAP_CHOWN",
+		  "CAP_DAC_OVERRIDE",
+		  "CAP_FSETID",
+		  "CAP_FOWNER",
+		  "CAP_MKNOD",
+		  "CAP_NET_RAW",
+		  "CAP_SETGID",
+		  "CAP_SETUID",
+		  "CAP_SETFCAP",
+		  "CAP_SETPCAP",
+		  "CAP_NET_BIND_SERVICE",
+		  "CAP_SYS_CHROOT",
+		  "CAP_KILL",
+		  "CAP_AUDIT_WRITE"
+		],
+		"effective": [
+		  "CAP_CHOWN",
+		  "CAP_DAC_OVERRIDE",
+		  "CAP_FSETID",
+		  "CAP_FOWNER",
+		  "CAP_MKNOD",
+		  "CAP_NET_RAW",
+		  "CAP_SETGID",
+		  "CAP_SETUID",
+		  "CAP_SETFCAP",
+		  "CAP_SETPCAP",
+		  "CAP_NET_BIND_SERVICE",
+		  "CAP_SYS_CHROOT",
+		  "CAP_KILL",
+		  "CAP_AUDIT_WRITE"
+		],
+		"permitted": [
+		  "CAP_CHOWN",
+		  "CAP_DAC_OVERRIDE",
+		  "CAP_FSETID",
+		  "CAP_FOWNER",
+		  "CAP_MKNOD",
+		  "CAP_NET_RAW",
+		  "CAP_SETGID",
+		  "CAP_SETUID",
+		  "CAP_SETFCAP",
+		  "CAP_SETPCAP",
+		  "CAP_NET_BIND_SERVICE",
+		  "CAP_SYS_CHROOT",
+		  "CAP_KILL",
+		  "CAP_AUDIT_WRITE"
+		]
+	  },
+	  "noNewPrivileges": true,
+	  "oomScoreAdj": -998
+	},
+	"root": {
+	  "path": "rootfs",
+	  "readonly": true
+	},
+	"hostname": "csi-node-driver-9bt4c",
+	"mounts": [
+	  {
+		"destination": "/proc",
+		"type": "proc",
+		"source": "proc",
+		"options": [
+		  "nosuid",
+		  "noexec",
+		  "nodev"
+		]
+	  },
+	  {
+		"destination": "/dev",
+		"type": "tmpfs",
+		"source": "tmpfs",
+		"options": [
+		  "nosuid",
+		  "strictatime",
+		  "mode=755",
+		  "size=65536k"
+		]
+	  },
+	  {
+		"destination": "/dev/pts",
+		"type": "devpts",
+		"source": "devpts",
+		"options": [
+		  "nosuid",
+		  "noexec",
+		  "newinstance",
+		  "ptmxmode=0666",
+		  "mode=0620",
+		  "gid=5"
+		]
+	  },
+	  {
+		"destination": "/dev/mqueue",
+		"type": "mqueue",
+		"source": "mqueue",
+		"options": [
+		  "nosuid",
+		  "noexec",
+		  "nodev"
+		]
+	  },
+	  {
+		"destination": "/sys",
+		"type": "sysfs",
+		"source": "sysfs",
+		"options": [
+		  "nosuid",
+		  "noexec",
+		  "nodev",
+		  "ro"
+		]
+	  },
+	  {
+		"destination": "/dev/shm",
+		"type": "bind",
+		"source": "/run/containerd/io.containerd.grpc.v1.cri/sandboxes/093df0dd4e350e7d7160186ab3a50edf68f7cb6a376b84cc4965ee206ae09717/shm",
+		"options": [
+		  "rbind",
+		  "ro",
+		  "nosuid",
+		  "nodev",
+		  "noexec"
+		]
+	  },
+	  {
+		"destination": "/etc/resolv.conf",
+		"type": "bind",
+		"source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/093df0dd4e350e7d7160186ab3a50edf68f7cb6a376b84cc4965ee206ae09717/resolv.conf",
+		"options": [
+		  "rbind",
+		  "ro",
+		  "nosuid",
+		  "nodev",
+		  "noexec"
+		]
+	  }
+	],
+	"annotations": {
+	  "io.kubernetes.cri.container-type": "sandbox",
+	  "io.kubernetes.cri.sandbox-cpu-period": "100000",
+	  "io.kubernetes.cri.sandbox-cpu-quota": "0",
+	  "io.kubernetes.cri.sandbox-cpu-shares": "2",
+	  "io.kubernetes.cri.sandbox-id": "093df0dd4e350e7d7160186ab3a50edf68f7cb6a376b84cc4965ee206ae09717",
+	  "io.kubernetes.cri.sandbox-log-directory": "/var/log/pods/calico-system_csi-node-driver-9bt4c_95b416f3-d739-402b-b074-2b23863ce2c4",
+	  "io.kubernetes.cri.sandbox-memory": "0",
+	  "io.kubernetes.cri.sandbox-name": "csi-node-driver-9bt4c",
+	  "io.kubernetes.cri.sandbox-namespace": "calico-system",
+	  "io.kubernetes.cri.sandbox-uid": "95b416f3-d739-402b-b074-2b23863ce2c4"
+	},
+	"linux": {
+	  "resources": {
+		"devices": [
+		  {
+			"allow": false,
+			"access": "rwm"
+		  }
+		],
+		"cpu": {
+		  "shares": 2
+		}
+	  },
+	  "cgroupsPath": "kubepods-besteffort-pod95b416f3_d739_402b_b074_2b23863ce2c4.slice:cri-containerd:093df0dd4e350e7d7160186ab3a50edf68f7cb6a376b84cc4965ee206ae09717",
+	  "namespaces": [
+		{
+		  "type": "pid"
+		},
+		{
+		  "type": "ipc"
+		},
+		{
+		  "type": "uts"
+		},
+		{
+		  "type": "mount"
+		},
+		{
+		  "type": "network",
+		  "path": "/var/run/netns/cni-9df1a36f-b1c5-bb30-5596-9cb89d2ba92c"
+		}
+	  ],
+	  "maskedPaths": [
+		"/proc/acpi",
+		"/proc/asound",
+		"/proc/kcore",
+		"/proc/keys",
+		"/proc/latency_stats",
+		"/proc/timer_list",
+		"/proc/timer_stats",
+		"/proc/sched_debug",
+		"/sys/firmware",
+		"/sys/devices/virtual/powercap",
+		"/proc/scsi"
+	  ],
+	  "readonlyPaths": [
+		"/proc/bus",
+		"/proc/fs",
+		"/proc/irq",
+		"/proc/sys",
+		"/proc/sysrq-trigger"
+	  ]
+	}
+  }
+}

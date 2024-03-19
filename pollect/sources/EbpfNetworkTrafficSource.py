@@ -8,7 +8,7 @@ from bcc import BPF
 
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.sources.Source import Source
-from pollect.sources.helper.NetworkStats import NetworkMetricsCounter
+from pollect.sources.helper.NetworkStats import NetworkMetricsCounter, ContainerNetworkUtils
 
 
 class EbpfNetworkTrafficSource(Source):
@@ -23,12 +23,12 @@ class EbpfNetworkTrafficSource(Source):
         self._running = False
 
         self._interface = config['interface']
-        self._catch_all = NetworkMetricsCounter('other', '0.0.0.0/0')
+        self._k8s_mode = config['mode'] == 'k8s'
+        self._catch_all = NetworkMetricsCounter('other', ['0.0.0.0/0'])
         self._networks: List[NetworkMetricsCounter] = []
         for network in config.get('networks', []):
             name = network['name']
-            net = network['network']
-            self._networks.append(NetworkMetricsCounter(name, net))
+            self._networks.append(NetworkMetricsCounter(name, network['cidrs']))
 
     def setup(self, global_conf):
         device = self._interface
@@ -38,9 +38,12 @@ class EbpfNetworkTrafficSource(Source):
         if device_stats is None:
             raise ValueError('Warning: Device ' + device + ' not found')
 
-        if device_stats.mtu >= self.MAX_MTU:
+        if device_stats.mtu > self.MAX_MTU:
             self.log.warning(f'Device {device} MTU is too large: '
                              f'{device_stats.mtu}, must be <= {self.MAX_MTU}')
+
+        if self._k8s_mode:
+            self._update_networks()
 
         self._running = True
         threading.Thread(target=self._poll).start()
@@ -60,9 +63,14 @@ class EbpfNetworkTrafficSource(Source):
         metrics = self._catch_all.get_per_second(current_time)
         values.add(Value(label_values=[self._catch_all.name, 'to'], value=metrics.bytes_to_network))
 
+        if self._k8s_mode:
+            self._update_networks()
         return values
 
     def _poll(self):
+        """
+        Polls the eBPF data
+        """
         src_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bpf', 'core.c')
 
         device = self._interface
@@ -73,8 +81,8 @@ class EbpfNetworkTrafficSource(Source):
 
         def runs_on_every_ethernet_frame(_, data, size):
             ip_and_bytes = b["events"].event(data)
-
-            for network in self._networks:
+            networks = self._networks
+            for network in networks:
                 if network.contains(ip_and_bytes.srcIp):
                     network.bytes_from_network += ip_and_bytes.bytes
                     return
@@ -90,3 +98,13 @@ class EbpfNetworkTrafficSource(Source):
             b.ring_buffer_poll()
 
         b.remove_xdp(device, 0)
+
+    def _update_networks(self):
+        """
+        Updates the networks list based on the containers running on this node
+        """
+        namespaces = ContainerNetworkUtils.get_namespace_ips()
+        networks = []
+        for namespace, ips in namespaces.items():
+            networks.append(NetworkMetricsCounter(namespace, list(ips)))
+        self._networks = networks

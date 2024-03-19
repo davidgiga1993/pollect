@@ -20,7 +20,8 @@ class ObjectFactory(Log):
     def create(self, class_name: str, *init_args):
         class_obj = self._get_class_obj(class_name)
         if class_obj is None:
-            raise AttributeError(f'Class {class_name} not found in module {self._base_module} - missing import?')
+            raise AttributeError(f'Class {class_name} not found in module {self._base_module} - missing import?'
+                                 f'Try running with --debug')
         return class_obj(*init_args)
 
     def _get_modules(self):

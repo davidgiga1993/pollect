@@ -189,8 +189,13 @@ name: host
 interface: eth0
 networks: # List of networks to which to group the traffic by. The "name" will be used as label.
   - name: "local"
-    network: "192.168.1.0/24"
+    cidrs: [ "192.168.1.0/24" ]
 # All traffic not matching any network will be labeled with "other"
+
+# Optional: If set to "k8s" the networks will be automatically filled
+# based on the kubernetes containers running on this node.
+# This will group the traffic by the k8s namespace.
+mode: k8s 
 ```
 
 ## DNS server statistics `Bind`
