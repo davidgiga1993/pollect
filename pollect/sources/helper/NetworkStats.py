@@ -23,6 +23,10 @@ class NetworkMetrics:
         self.received_bytes = self.received_bytes / delta
         self.transmitted_bytes = self.transmitted_bytes / delta
 
+    def reset(self):
+        self.received_bytes = 0
+        self.transmitted_bytes = 0
+
 
 class Subnet:
     def __init__(self, subnet: str):
