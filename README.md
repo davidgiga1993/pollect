@@ -171,24 +171,10 @@ Wrapper for the linux `sensors` utility. Collects sensor data such as temps and 
 
 ## Kubernetes Network Traffic `K8sNamespaceTraffic`
 
-This source uses the eBPF kernel module to collect network traffic statistics and 
-groups the traffic by kubernetes namespace and known destination networks.
+Monitors the per-namespace traffic.
 
-Requires the following packages:
+See [Kubernetes Network Insights](docs/K8sNetwork.md) for more details.
 
-- `bcc` or `amazon-linux-extras install BCC` for AWS EC2 instances.
-
-Additional requirements:
-- containerd
-
-```yaml
-type: K8sNamespaceTraffic
-name: host
-networks: # List of known destination networks to which to group the traffic by (in addition to the namespace names)
-  - name: "local"
-    cidrs: [ "192.168.1.0/24" ]
-# All traffic not matching any network will be labeled with "other"
-```
 
 ## DNS server statistics `Bind`
 

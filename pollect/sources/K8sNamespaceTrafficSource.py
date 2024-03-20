@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime
 import os
 from typing import Optional, List, NamedTuple, Dict, Callable
 
@@ -28,8 +27,6 @@ class K8sNamespaceTrafficSource(Source):
 
         # Add catch-any as last item
         self._dest_networks.append(NamedNetworks('other', ['0.0.0.0/0']))
-        self._last_run: Optional[datetime.datetime] = None
-
         self._metrics = NamespacesMetrics()
 
     def setup(self, global_conf):
@@ -44,14 +41,6 @@ class K8sNamespaceTrafficSource(Source):
         self._b = b
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
-        last_probe_seconds_ago = 1
-        now = datetime.datetime.now()
-        if self._last_run is not None:
-            last_probe_seconds_ago = (now - self._last_run).total_seconds()
-        self._last_run = now
-
-        self._metrics.reset()
-
         ipv4_send_bytes = self._b["ipv4_send_bytes"]
         ipv4_recv_bytes = self._b["ipv4_recv_bytes"]
         ipv6_send_bytes = self._b["ipv6_send_bytes"]
@@ -90,7 +79,6 @@ class K8sNamespaceTrafficSource(Source):
             for network, metrics in value.metrics.items():
                 net_name = network.name
                 assert isinstance(metrics, NetworkMetrics)
-                metrics.divide(last_probe_seconds_ago)
                 values.add(Value(label_values=[namespace, net_name, 'received'], value=metrics.received_bytes))
                 values.add(Value(label_values=[namespace, net_name, 'sent'], value=metrics.transmitted_bytes))
 
@@ -155,10 +143,6 @@ class NamespaceNetworkMetric:
             assign(self.metrics[dest_network], data_bytes)
             return
 
-    def reset(self):
-        for item in self.metrics.values():
-            item.reset()
-
 
 class NamespacesMetrics:
     CATCH_ALL_NAME = 'unknown'
@@ -197,7 +181,3 @@ class NamespacesMetrics:
         for network in self._container_networks:
             if network.contains(local_address):
                 return network
-
-    def reset(self):
-        for metric in self.metrics.values():
-            metric.reset()
