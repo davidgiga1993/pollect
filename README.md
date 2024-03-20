@@ -169,33 +169,25 @@ Wrapper for the linux `sensors` utility. Collects sensor data such as temps and 
 | exclude      | Name of chips which should be excluded. Can be empty                                         |
 | useBaseUnits | Set to `False` to report the raw values in their reported unit (for example mV instead of V) |
 
-## eBPF Network Traffic `EbpfNetworkTraffic`
+## Kubernetes Network Traffic `K8sNamespaceTraffic`
 
-This source uses the eBPF kernel module to collect network traffic statistics.
-The traffic can be grouped by subnets to provide an overview where the traffic is going.
+This source uses the eBPF kernel module to collect network traffic statistics and 
+groups the traffic by kubernetes namespace and known destination networks.
 
 Requires the following packages:
 
-- `psutil`
 - `bcc` or `amazon-linux-extras install BCC` for AWS EC2 instances.
 
-Network interface requirements:
-- The MTU must be <= `3498` as per the eBPF limitations: `ip link set dev eth0 mtu 3498`
-- The interface must have at least one free processing channel: `ethtool -L eth0 combined 1`
+Additional requirements:
+- containerd
 
 ```yaml
-type: EbpfNetworkTraffic
+type: K8sNamespaceTraffic
 name: host
-interface: eth0
-networks: # List of networks to which to group the traffic by. The "name" will be used as label.
+networks: # List of known destination networks to which to group the traffic by (in addition to the namespace names)
   - name: "local"
     cidrs: [ "192.168.1.0/24" ]
 # All traffic not matching any network will be labeled with "other"
-
-# Optional: If set to "k8s" the networks will be automatically filled
-# based on the kubernetes containers running on this node.
-# This will group the traffic by the k8s namespace.
-mode: k8s 
 ```
 
 ## DNS server statistics `Bind`

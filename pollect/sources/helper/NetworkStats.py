@@ -1,4 +1,3 @@
-import datetime
 import ipaddress
 import json
 import re
@@ -7,16 +6,22 @@ from typing import Dict, List
 
 
 class NetworkMetrics:
-    bytes_to_network: int
-    bytes_from_network: int
+    received_bytes: int
+    transmitted_bytes: int
 
-    def __init__(self, bytes_to_network: int = 0, bytes_from_network: int = 0):
-        self.bytes_to_network = bytes_to_network
-        self.bytes_from_network = bytes_from_network
+    def __init__(self, received_bytes: int = 0, transmitted_bytes: int = 0):
+        self.received_bytes = received_bytes
+        self.transmitted_bytes = transmitted_bytes
+
+    def add_transmitted(self, count: int):
+        self.transmitted_bytes += count
+
+    def add_received(self, count: int):
+        self.received_bytes += count
 
     def divide(self, delta):
-        self.bytes_to_network = self.bytes_to_network / delta
-        self.bytes_from_network = self.bytes_from_network / delta
+        self.received_bytes = self.received_bytes / delta
+        self.transmitted_bytes = self.transmitted_bytes / delta
 
 
 class Subnet:
@@ -29,10 +34,7 @@ class Subnet:
         return (ip & self._mask) == self._netw
 
 
-class NetworkMetricsCounter:
-    """
-    Holds the count of bytes per IP subnet
-    """
+class NamedNetworks:
 
     def __init__(self, name: str, subnets: List[str]):
         self.name = name
@@ -40,26 +42,11 @@ class NetworkMetricsCounter:
         for subnet in subnets:
             self._subnets.append(Subnet(subnet))
 
-        self.bytes_to_network: int = 0
-        self.bytes_from_network: int = 0
-        self.last_reset: datetime.datetime = datetime.datetime.now()
-
     def contains(self, ip: int):
         for net in self._subnets:
             if net.contains(ip):
                 return True
         return False
-
-    def get_per_second(self, now: datetime.datetime) -> NetworkMetrics:
-        delta = (now - self.last_reset).total_seconds()
-        self.last_reset = now
-
-        metrics = NetworkMetrics(self.bytes_to_network, self.bytes_from_network)
-        metrics.divide(delta)
-
-        self.bytes_to_network = 0
-        self.bytes_from_network = 0
-        return metrics
 
 
 class ContainerNetworkUtils:
