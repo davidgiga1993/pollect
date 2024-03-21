@@ -28,7 +28,7 @@ class K8sNamespaceTrafficSource(Source):
 
         # Add catch-any as last item
         self._dest_networks.append(NamedNetworks('other', ['0.0.0.0/0']))
-        self._metrics = NamespacesMetrics()
+        self._metrics = NamespacesMetrics(self._dest_networks)
 
     def setup(self, global_conf):
         src_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bpf', 'tcp.c')
@@ -58,8 +58,7 @@ class K8sNamespaceTrafficSource(Source):
                 # Unknown traffic
                 continue
             namespace_metrics.add_traffic(meta.remoteAddr, collected_bytes,
-                                          lambda m, data_count: m.add_transmitted(data_count),
-                                          self._dest_networks)
+                                          lambda m, data_count: m.add_transmitted(data_count))
 
         for data, collected_bytes in ipv4_recv_bytes.items_lookup_and_delete_batch():
             meta = to_ipv4_key(data)
@@ -68,8 +67,7 @@ class K8sNamespaceTrafficSource(Source):
                 # Unknown traffic
                 continue
             namespace_metrics.add_traffic(meta.remoteAddr, collected_bytes,
-                                          lambda m, data_count: m.add_received(data_count),
-                                          self._dest_networks)
+                                          lambda m, data_count: m.add_received(data_count))
 
         # Now export the data
         values = ValueSet(labels=[self._namespace_label, 'dest_network', 'direction'])
@@ -117,24 +115,24 @@ def swap32(x: int) -> int:
 
 
 class NamespaceNetworkMetric:
-    def __init__(self, name: str):
+    def __init__(self, name: str, dest_networks: List[NamedNetworks]):
         self.namespace: str = name
+        self._dest_networks: List[NamedNetworks] = dest_networks
+
         self.metrics: Dict[NamedNetworks, NetworkMetrics] = dict()
         """
         Holds the send/received bytes grouped by destination network
         """
 
-    def add_traffic(self, remote_addr: int, data_bytes: int, assign: Callable[[NetworkMetrics, int], None],
-                    dest_networks: List[NamedNetworks]):
+    def add_traffic(self, remote_addr: int, data_bytes: int, assign: Callable[[NetworkMetrics, int], None]):
         """
         Adds traffic metrics for the given remote address to this namespace
         :param remote_addr: Remote ip address
         :param data_bytes: Number of bytes to add
         :param assign: Lambda for assigning the traffic to the correct metric field
-        :param dest_networks: All known destination networks
         :return:
         """
-        for dest_network in dest_networks:
+        for dest_network in self._dest_networks:
             if not dest_network.contains(remote_addr):
                 continue
             if dest_network not in self.metrics:
@@ -146,10 +144,12 @@ class NamespaceNetworkMetric:
 class NamespacesMetrics:
     CATCH_ALL_NAME = 'unknown'
 
-    def __init__(self):
+    def __init__(self, dest_networks: List[NamedNetworks]):
         self.metrics: Dict[str, NamespaceNetworkMetric] = {
             self.CATCH_ALL_NAME: NamespaceNetworkMetric(self.CATCH_ALL_NAME)
         }
+
+        self._dest_networks: List[NamedNetworks] = dest_networks
 
         """
         Holds the send/received bytes grouped by namespace
@@ -160,10 +160,14 @@ class NamespacesMetrics:
     def get_namespace_metrics(self, local_address: int) -> Optional[NamespaceNetworkMetric]:
         network = self._get_container_network(local_address)
         if network is None:
-            return self.metrics[self.CATCH_ALL_NAME]
+            # The local networks is not known to k8s, maybe the source is one of the known networks?
+            # This happens for example for cross-node traffic
+            network = self._get_dest_network(local_address)
+            if network is None:  # No idea what this traffic is
+                return self.metrics[self.CATCH_ALL_NAME]
 
         if network.name not in self.metrics:
-            self.metrics[network.name] = NamespaceNetworkMetric(network.name)
+            self.metrics[network.name] = NamespaceNetworkMetric(network.name, self._dest_networks)
         return self.metrics[network.name]
 
     def _update_networks(self):
@@ -176,7 +180,14 @@ class NamespacesMetrics:
             networks.append(NamedNetworks(namespace, list(ips)))
         self._container_networks = networks
 
-    def _get_container_network(self, local_address: int) -> NamedNetworks:
+    def _get_container_network(self, local_address: int) -> Optional[NamedNetworks]:
         for network in self._container_networks:
             if network.contains(local_address):
                 return network
+        return None
+
+    def _get_dest_network(self, local_address: int) -> Optional[NamedNetworks]:
+        for network in self._dest_networks:
+            if network.contains(local_address):
+                return network
+        return None
