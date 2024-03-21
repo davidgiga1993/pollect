@@ -42,6 +42,8 @@ class K8sNamespaceTrafficSource(Source):
         self._b = b
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+        self._metrics.update_networks()
+
         ipv4_send_bytes = self._b["ipv4_send_bytes"]
         ipv4_recv_bytes = self._b["ipv4_recv_bytes"]
         ipv6_send_bytes = self._b["ipv6_send_bytes"]
@@ -155,7 +157,6 @@ class NamespacesMetrics:
         Holds the send/received bytes grouped by namespace
         """
         self._container_networks: List[NamedNetworks] = []
-        self._update_networks()
 
     def get_namespace_metrics(self, local_address: int) -> Optional[NamespaceNetworkMetric]:
         network = self._get_container_network(local_address)
@@ -170,7 +171,7 @@ class NamespacesMetrics:
             self.metrics[network.name] = NamespaceNetworkMetric(network.name, self._dest_networks)
         return self.metrics[network.name]
 
-    def _update_networks(self):
+    def update_networks(self):
         """
         Updates the networks list based on the containers running on this node
         """
