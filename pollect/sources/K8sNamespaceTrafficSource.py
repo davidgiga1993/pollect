@@ -146,7 +146,7 @@ class NamespacesMetrics:
 
     def __init__(self, dest_networks: List[NamedNetworks]):
         self.metrics: Dict[str, NamespaceNetworkMetric] = {
-            self.CATCH_ALL_NAME: NamespaceNetworkMetric(self.CATCH_ALL_NAME)
+            self.CATCH_ALL_NAME: NamespaceNetworkMetric(self.CATCH_ALL_NAME, dest_networks)
         }
 
         self._dest_networks: List[NamedNetworks] = dest_networks
