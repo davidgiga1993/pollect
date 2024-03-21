@@ -19,6 +19,7 @@ class K8sNamespaceTrafficSource(Source):
 
     def __init__(self, config):
         super().__init__(config)
+        self._namespace_label = config.get('namespaceLabel', 'namespace')
 
         self._dest_networks: List[NamedNetworks] = []
         for network in config.get('networks', []):
@@ -71,9 +72,7 @@ class K8sNamespaceTrafficSource(Source):
                                           self._dest_networks)
 
         # Now export the data
-        values = ValueSet(labels=['namespace', 'dest_network', 'direction'])
-        values.name = 'bytes_per_sec'
-
+        values = ValueSet(labels=[self._namespace_label, 'dest_network', 'direction'])
         for value in self._metrics.metrics.values():
             namespace = value.namespace
             for network, metrics in value.metrics.items():
