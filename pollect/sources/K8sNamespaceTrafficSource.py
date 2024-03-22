@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ipaddress
 import os
 from typing import Optional, List, NamedTuple, Dict, Callable
 
@@ -20,6 +21,7 @@ class K8sNamespaceTrafficSource(Source):
     def __init__(self, config):
         super().__init__(config)
         self._namespace_label = config.get('namespaceLabel', 'namespace')
+        self._log_unknown_traffic = config.get('logUnknownTraffic', False)
 
         self._dest_networks: List[NamedNetworks] = []
         for network in config.get('networks', []):
@@ -56,18 +58,14 @@ class K8sNamespaceTrafficSource(Source):
         for data, collected_bytes in ipv4_send_bytes.items_lookup_and_delete_batch():
             meta = to_ipv4_key(data)
             namespace_metrics = self._metrics.get_namespace_metrics(meta.localAddr)
-            if namespace_metrics is None:
-                # Unknown traffic
-                continue
+            self._log_traffic(namespace_metrics, meta, 'sent')
             namespace_metrics.add_traffic(meta.remoteAddr, collected_bytes,
                                           lambda m, data_count: m.add_transmitted(data_count))
 
         for data, collected_bytes in ipv4_recv_bytes.items_lookup_and_delete_batch():
             meta = to_ipv4_key(data)
             namespace_metrics = self._metrics.get_namespace_metrics(meta.localAddr)
-            if namespace_metrics is None:
-                # Unknown traffic
-                continue
+            self._log_traffic(namespace_metrics, meta, 'received')
             namespace_metrics.add_traffic(meta.remoteAddr, collected_bytes,
                                           lambda m, data_count: m.add_received(data_count))
 
@@ -82,6 +80,17 @@ class K8sNamespaceTrafficSource(Source):
                 values.add(Value(label_values=[namespace, net_name, 'sent'], value=metrics.transmitted_bytes))
 
         return values
+
+    def _log_traffic(self, namespace_metrics: NamespaceNetworkMetric, meta: TCPSessionKey, direction: str):
+        if not self._log_unknown_traffic:
+            return
+        if not namespace_metrics.is_catch_all():
+            return
+
+        self.log.info(f'Unknown traffic: local {ipaddress.IPv4Network(meta.localAddr)}, '
+                      f'remote {ipaddress.IPv4Network(meta.remoteAddr)}, '
+                      f'direction {direction}, '
+                      f'from process {meta.name}')
 
 
 class TCPSessionKey(NamedTuple):
@@ -117,7 +126,7 @@ def swap32(x: int) -> int:
 
 
 class NamespaceNetworkMetric:
-    def __init__(self, name: str, dest_networks: List[NamedNetworks]):
+    def __init__(self, name: str, dest_networks: List[NamedNetworks], catch_all: bool = False):
         self.namespace: str = name
         self._dest_networks: List[NamedNetworks] = dest_networks
 
@@ -125,6 +134,8 @@ class NamespaceNetworkMetric:
         """
         Holds the send/received bytes grouped by destination network
         """
+
+        self._is_catch_all = catch_all
 
     def add_traffic(self, remote_addr: int, data_bytes: int, assign: Callable[[NetworkMetrics, int], None]):
         """
@@ -142,13 +153,20 @@ class NamespaceNetworkMetric:
             assign(self.metrics[dest_network], data_bytes)
             return
 
+    def is_catch_all(self) -> bool:
+        """
+        Indicates if this network is a "catch-all" or "unknown" network segment
+        :return:
+        """
+        return self._is_catch_all
+
 
 class NamespacesMetrics:
     CATCH_ALL_NAME = 'unknown'
 
     def __init__(self, dest_networks: List[NamedNetworks]):
         self.metrics: Dict[str, NamespaceNetworkMetric] = {
-            self.CATCH_ALL_NAME: NamespaceNetworkMetric(self.CATCH_ALL_NAME, dest_networks)
+            self.CATCH_ALL_NAME: NamespaceNetworkMetric(self.CATCH_ALL_NAME, dest_networks, catch_all=True)
         }
 
         self._dest_networks: List[NamedNetworks] = dest_networks
@@ -158,7 +176,7 @@ class NamespacesMetrics:
         """
         self._container_networks: List[NamedNetworks] = []
 
-    def get_namespace_metrics(self, local_address: int) -> Optional[NamespaceNetworkMetric]:
+    def get_namespace_metrics(self, local_address: int) -> NamespaceNetworkMetric:
         network = self._get_container_network(local_address)
         if network is None:
             # The local networks is not known to k8s, maybe the source is one of the known networks?

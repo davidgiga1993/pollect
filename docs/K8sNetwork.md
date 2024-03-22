@@ -22,6 +22,12 @@ networks: # List of known destination networks to which to group the traffic by 
   - name: "local"
     cidrs: [ "192.168.1.0/24" ]
 # All traffic not matching any network will be labeled with "other"
+
+# Optional: Defines the label name to use for the exported metrics k8s namespaces
+# namespaceLabel: 'namespace'
+
+# Optional: When true logs all packets which do not match any of the known networks
+# logUnknownTraffic: False
 ```
 
 Example output:
