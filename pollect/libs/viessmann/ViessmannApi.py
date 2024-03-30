@@ -30,8 +30,10 @@ class Feature(JsonObject):
     def get_property(self, property_name: str):
         return self.properties.get(property_name)
 
-    def get_property_value(self, property_name: str):
+    def get_property_value(self, property_name: str) -> Optional[any]:
         value_data = self.get_property(property_name)
+        if value_data is None:  # Value doesn't exist
+            return None
         return value_data['value']
 
     def get_action(self, name: str):
