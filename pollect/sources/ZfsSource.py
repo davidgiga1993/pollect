@@ -10,6 +10,7 @@ class ZpoolIostat:
     """
     IO stats for all zpools
     """
+    _process: subprocess.Popen
 
     def __init__(self):
         self._ticks = 0
@@ -25,14 +26,14 @@ class ZpoolIostat:
         threading.Thread(target=self._run_process, args=[args]).start()
 
     def _run_process(self, args):
-        process = subprocess.Popen(
+        self._process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
-        while process.poll() is None and self._active:
+        while self._process.poll() is None and self._active:
             capacity_set = ValueSet()
             io_set = ValueSet()
-            line = process.stdout.readline().decode('utf-8')
+            line = self._process.stdout.readline().decode('utf-8')
             segments = line.split('\t')
             if len(segments) < 7:
                 continue
@@ -50,6 +51,7 @@ class ZpoolIostat:
 
     def stop(self):
         self._active = False
+        self._process.terminate()
 
     def get_data(self) -> List[ValueSet]:
         """
