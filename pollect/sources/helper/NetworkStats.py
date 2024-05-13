@@ -65,8 +65,15 @@ class ContainerNetworkUtils:
 
         for container_id in lines:
             # Find the network namespace of the container
-            json_str = subprocess.check_output(['ctr', '-n', 'k8s.io', 'container', 'info', container_id]) \
-                .decode('utf-8')
+            try:
+                json_str = subprocess.check_output(['ctr', '-n', 'k8s.io', 'container', 'info', container_id]) \
+                    .decode('utf-8')
+            except subprocess.CalledProcessError as e:
+                if 'not found' in str(e):
+                    # Container was just removed in the meantime
+                    continue
+                raise e
+
             data = json.loads(json_str)
             k8s_namespace = data.get('Labels', {}).get('io.kubernetes.pod.namespace', '')
             network_namespace = None
