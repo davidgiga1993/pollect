@@ -36,12 +36,13 @@ class Subnet:
 
 class NamedNetworks:
 
-    def __init__(self, name: str, subnets: List[str], catch_all: bool = False):
+    def __init__(self, name: str, subnets: List[str], catch_all: bool = False, hide: bool = False):
         self.name = name
+        self.hide = hide
+        self.catch_all = catch_all
         self._subnets: List[Subnet] = []
         for subnet in subnets:
             self._subnets.append(Subnet(subnet))
-        self.catch_all = catch_all
 
     def contains(self, ip: int):
         for net in self._subnets:

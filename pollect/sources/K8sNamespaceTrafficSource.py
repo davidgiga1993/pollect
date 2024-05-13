@@ -29,6 +29,7 @@ class K8sNamespaceTrafficSource(Source):
             self.known_networks.append(NamedNetworks(name, network['cidrs']))
 
         # Add catch-any as last item
+        self.known_networks.append(NamedNetworks('localhost', ['127.0.0.1'], hide=True))
         self.known_networks.append(NamedNetworks('other', ['0.0.0.0/0'], catch_all=True))
         self._metrics = NamespacesMetrics(self.known_networks)
 
@@ -77,6 +78,9 @@ class K8sNamespaceTrafficSource(Source):
         for value in self._metrics.metrics.values():
             namespace = value.namespace
             for network, metrics in value.metrics.items():
+                if network.hide:
+                    continue
+
                 net_name = network.name
                 assert isinstance(metrics, NetworkMetrics)
                 values.add(Value(label_values=[namespace, net_name, 'received'], value=metrics.received_bytes))
