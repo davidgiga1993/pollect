@@ -75,7 +75,7 @@ class SourceFactory:
         source_obj = self._factory.create(class_name, source_data)
         if not isinstance(source_obj, Source):
             raise TypeError('Class ' + class_name + ' does not inherit from "Source"')
-        source_obj.setup(self.global_conf)
+        source_obj.setup_source(self.global_conf)
         return source_obj
 
 

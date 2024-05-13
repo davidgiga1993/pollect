@@ -43,8 +43,8 @@ class HttpIngressSource(Source):
             value_set.name = metric_def.name
             self._metrics[metric_def.name] = value_set
 
-    def setup(self, global_conf):
-        super().setup(global_conf)
+    def setup_source(self, global_conf):
+        super().setup_source(global_conf)
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
 

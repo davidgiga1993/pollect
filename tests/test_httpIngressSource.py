@@ -28,7 +28,7 @@ class TestHttpIngressSource(TestCase):
         }
 
         self.source = HttpIngressSource(data)
-        self.source.setup({})
+        self.source.setup_source({})
         results = self.source.probe()
         self.assertEqual(1, len(results))
         self.assertEqual(0, len(results[0].values))
@@ -73,7 +73,7 @@ class TestHttpIngressSource(TestCase):
         }
 
         self.source = HttpIngressSource(data)
-        self.source.setup({})
+        self.source.setup_source({})
         results = self.source.probe()
         self.assertEqual(1, len(results))
         self.assertEqual(0, len(results[0].values))

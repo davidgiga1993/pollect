@@ -32,7 +32,7 @@ class K8sNamespaceTrafficSource(Source):
         self._dest_networks.append(NamedNetworks('other', ['0.0.0.0/0']))
         self._metrics = NamespacesMetrics(self._dest_networks)
 
-    def setup(self, global_conf):
+    def setup_source(self, global_conf):
         src_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bpf', 'tcp.c')
         b = BPF(src_file=src_file)
         b.attach_kprobe(event='tcp_sendmsg', fn_name='tcp_send_entry')

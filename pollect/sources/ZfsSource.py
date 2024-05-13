@@ -88,7 +88,7 @@ class ZfsSource(Source):
         super().__init__(config)
         self._iostats = ZpoolIostat()
 
-    def setup(self, global_conf):
+    def setup_source(self, global_conf):
         self._iostats.start()
 
     def shutdown(self):
