@@ -21,7 +21,7 @@ class K8sNamespaceTrafficSource(Source):
     def __init__(self, config):
         super().__init__(config)
         self._namespace_label = config.get('namespaceLabel', 'namespace')
-        self._log_unknown_traffic = config.get('logUnknownTraffic', False)
+        self._traffic_log_mode = config.get('trafficLog')
 
         self._dest_networks: List[NamedNetworks] = []
         for network in config.get('networks', []):
@@ -42,6 +42,9 @@ class K8sNamespaceTrafficSource(Source):
             b.attach_kprobe(event='tcp_sendpage', fn_name='tcp_send_entry')
             b.attach_kretprobe(event='tcp_sendpage', fn_name='tcp_send_ret')
         self._b = b
+
+        if self._traffic_log_mode is not None:
+            self.log.info(f'Traffic logging enabled: {self._traffic_log_mode}')
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
         self._metrics.update_networks()
@@ -82,9 +85,10 @@ class K8sNamespaceTrafficSource(Source):
         return values
 
     def _log_traffic(self, namespace_metrics: NamespaceNetworkMetric, meta: TCPSessionKey, direction: str):
-        if not self._log_unknown_traffic:
+        if self._traffic_log_mode is None:
             return
-        if not namespace_metrics.is_catch_all():
+
+        if self._traffic_log_mode == 'unknown' and not namespace_metrics.is_catch_all():
             return
 
         self.log.info(f'Unknown traffic: local {ipaddress.IPv4Network(meta.localAddr)}, '
