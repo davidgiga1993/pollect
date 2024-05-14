@@ -22,6 +22,7 @@ class K8sNamespaceTrafficSource(Source):
         super().__init__(config)
         self._namespace_label = config.get('namespaceLabel', 'namespace')
         self._traffic_log_mode = config.get('trafficLog')
+        hide_localhost_traffic = config.get('hideLocalhostTraffic', True)
 
         self.known_networks: List[NamedNetworks] = []
         for network in config.get('networks', []):
@@ -29,7 +30,7 @@ class K8sNamespaceTrafficSource(Source):
             self.known_networks.append(NamedNetworks(name, network['cidrs']))
 
         # Add catch-any as last item
-        self.known_networks.append(NamedNetworks('localhost', ['127.0.0.1'], hide=True))
+        self.known_networks.append(NamedNetworks('localhost', ['127.0.0.0/8'], hide=hide_localhost_traffic))
         self.known_networks.append(NamedNetworks('other', ['0.0.0.0/0'], catch_all=True))
         self._metrics = NamespacesMetrics(self.known_networks)
 
