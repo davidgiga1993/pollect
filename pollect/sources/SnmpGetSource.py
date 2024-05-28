@@ -229,7 +229,7 @@ class SnmpGetSource(Source):
                 values.update(self._get_values(chunk))
             return values
 
-        args = ['snmpget', '-v1', '-c', self.community, self.host]
+        args = ['snmpget', '-v2c', '-c', self.community, self.host]
         args.extend(oids)
         lines = subprocess.check_output(args).decode('utf-8').splitlines()
 
