@@ -300,6 +300,16 @@ of openhab (since it doesn't include all items).
 |-------|----------------|
 | url   | URL to openhab |
 
+## Zodiac Pool Cleaner `ZodiacPool`
+Provides metrics about the current state and remaining duration of the cleaning
+cycle. This source has been tested with the Zodiac Alpha 63 IQ and might 
+also work with other Zodiac devices.
+
+| Param    | Desc                |
+|----------|---------------------|
+| user     | Username            |
+| password | Password            |
+
 ## Audi MMI `MMI`
 
 Connects to the audi MMI backend and collects data. Requires the [audi api](https://github.com/davidgiga1993/AudiAPI)
