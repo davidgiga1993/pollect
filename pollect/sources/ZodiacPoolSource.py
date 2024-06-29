@@ -30,6 +30,7 @@ class ZodiacPoolSource(Source):
             self.api.login(self._user, self._password)
             self._persist_auth()
             return
+
         with open(self.AUTH_FILE, "r") as f:
             login_data = json.load(f)
 
@@ -52,6 +53,7 @@ class ZodiacPoolSource(Source):
                 remaining = robot.get_remaining_time()
 
             values.add(Value(remaining, [device.serial_number], 'remaining_time'))
+
         self._persist_auth()
         return values
 

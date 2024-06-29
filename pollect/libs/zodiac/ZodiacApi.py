@@ -39,11 +39,15 @@ class ZodiacApi:
         return dto
 
     def refresh_auth(self) -> LoginReply:
+        current_refresh_token = self.user.userPoolOAuth.RefreshToken
         body = {
             'email': self.user.email,
             'refresh_token': self.user.userPoolOAuth.RefreshToken
         }
         dto = self._post(f'{self.SHADOW_URL}/users/v1/refresh', body, LoginReply())
+        if dto.userPoolOAuth.RefreshToken == '':
+            # API didn't reply with refresh token, keep current
+            dto.userPoolOAuth.RefreshToken = current_refresh_token
         self.user = dto
         return dto
 
