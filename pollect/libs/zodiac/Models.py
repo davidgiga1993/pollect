@@ -3,10 +3,10 @@ import json
 import time
 from typing import Dict, Optional
 
-from pollect.libs.api.Serializable import Serializeable
+from pollect.libs.api.Serializable import Serializable
 
 
-class SystemInfo(Serializeable):
+class SystemInfo(Serializable):
     def __init__(self):
         super().__init__()
         self.id: int = 0
@@ -21,7 +21,7 @@ class SystemInfo(Serializeable):
         self.target_firmware_version: Optional[str] = None
 
 
-class Credentials(Serializeable):
+class Credentials(Serializable):
     def __init__(self):
         super().__init__()
         self.AccessKeyId: str = ''
@@ -30,7 +30,7 @@ class Credentials(Serializeable):
         self.IdentityId: str = ''
 
 
-class OAuthPool(Serializeable):
+class OAuthPool(Serializable):
     def __init__(self):
         super().__init__()
         self.AccessToken: str = ''
@@ -40,7 +40,7 @@ class OAuthPool(Serializeable):
         self.IdToken: str = ''
 
 
-class LoginReply(Serializeable):
+class LoginReply(Serializable):
     def __init__(self):
         super().__init__()
         self.username: str = ''
@@ -83,7 +83,7 @@ class LoginReply(Serializeable):
         return time.time() >= exp
 
 
-class PoolCleanerInfo(Serializeable):
+class PoolCleanerInfo(Serializable):
     def __init__(self):
         super().__init__()
         self.deviceId: str = ''
@@ -91,13 +91,13 @@ class PoolCleanerInfo(Serializeable):
         self.ts: int = 0
 
 
-class PoolCleanerState(Serializeable):
+class PoolCleanerState(Serializable):
     def __init__(self):
         super().__init__()
         self.reported = ReportedPoolCleanerState()
 
 
-class ReportedPoolCleanerState(Serializeable):
+class ReportedPoolCleanerState(Serializable):
     def __init__(self):
         super().__init__()
         self.aws = AwsState()
@@ -115,7 +115,7 @@ class ReportedPoolCleanerState(Serializeable):
         """
 
 
-class Equipment(Serializeable):
+class Equipment(Serializable):
     def __init__(self):
         super().__init__()
         self.robot = Robot()
@@ -129,7 +129,7 @@ class ProgramCycles:
     CUSTOM = 4
 
 
-class Robot(Serializeable):
+class Robot(Serializable):
     def __init__(self):
         super().__init__()
         self.equipmentId: str = ''
@@ -239,7 +239,7 @@ class Robot(Serializeable):
         return self.state != 0
 
 
-class CycleDurations(Serializeable):
+class CycleDurations(Serializable):
     def __init__(self):
         super().__init__()
         self.customTim: int = 0
@@ -273,7 +273,7 @@ class CycleDurations(Serializeable):
         """
 
 
-class AwsState(Serializeable):
+class AwsState(Serializable):
     STATUS_CONNECTED = 'connected'
     STATUS_DISCONNECTED = 'disconnected'
 

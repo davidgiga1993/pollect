@@ -63,4 +63,4 @@ class ZodiacPoolSource(Source):
 
         self.expires_in = self.api.user.userPoolOAuth.ExpiresIn
         with open(self.AUTH_FILE, "w") as f:
-            json.dump(self.api.user.get_raw(), f)
+            json.dump(self.api.user.get_data(), f)

@@ -6,13 +6,14 @@ from urllib.parse import urlencode
 
 import requests
 
-from pollect.libs.api.Serializable import Serializeable
+from pollect.core.Log import Log
+from pollect.libs.api.Serializable import Serializable
 from pollect.libs.zodiac.Models import LoginReply, PoolCleanerInfo, SystemInfo
 
 T = TypeVar('T')
 
 
-class ZodiacApi:
+class ZodiacApi(Log):
     """
     Zodiac API
     """
@@ -27,6 +28,7 @@ class ZodiacApi:
     user: LoginReply
 
     def __init__(self):
+        super().__init__(__name__)
         self.user = LoginReply()
 
     def login(self, email: str, password: str) -> LoginReply:
@@ -40,13 +42,17 @@ class ZodiacApi:
 
     def refresh_auth(self) -> LoginReply:
         current_refresh_token = self.user.userPoolOAuth.RefreshToken
+        if current_refresh_token is None or current_refresh_token == '':
+            raise ValueError("No refresh token available, can't refresh auth")
+
         body = {
             'email': self.user.email,
-            'refresh_token': self.user.userPoolOAuth.RefreshToken
+            'refresh_token': current_refresh_token
         }
         dto = self._post(f'{self.SHADOW_URL}/users/v1/refresh', body, LoginReply())
         if dto.userPoolOAuth.RefreshToken == '':
             # API didn't reply with refresh token, keep current
+            self.log.warning('No new refresh token provided by api')
             dto.userPoolOAuth.RefreshToken = current_refresh_token
         self.user = dto
         return dto
@@ -103,7 +109,7 @@ class ZodiacApi:
                 'signature': sign,
                 'timestamp': unix_time,
                 'params': f'request={command}&timeout=800'
-            }, Serializeable(), headers={
+            }, Serializable(), headers={
                 'api_key': self.API_KEY,
                 'Authorization': id_token
             })
@@ -117,7 +123,7 @@ class ZodiacApi:
                 'params': f'request={command}&timeout=800'
             }
             url = f'https://r-api.iaqualink.net/devices/{serial_nr}/execute_read_command.json'
-            data = self._post(url, {}, Serializeable(), query=query_params, headers={
+            data = self._post(url, {}, Serializable(), query=query_params, headers={
                 "Accept": "application/json"
             })
 
@@ -129,7 +135,7 @@ class ZodiacApi:
         reply = requests.get(path, headers=headers)
         self._handle_reply(reply)
         data = reply.json()
-        return Serializeable.deserialize_from_data(data, dto)
+        return Serializable.deserialize_from_data(data, dto)
 
     def _post(self, path: str, payload: Dict[str, any], dto: T, query=None, headers=None) -> T:
         if query is not None:
@@ -137,7 +143,7 @@ class ZodiacApi:
         reply = requests.post(path, json=payload, headers=headers)
         self._handle_reply(reply)
         data = reply.json()
-        return Serializeable.deserialize_from_data(data, dto)
+        return Serializable.deserialize_from_data(data, dto)
 
     def _sign(self, content: str) -> str:
         key = bytes(self.API_SECRET_KEY, 'UTF-8')
@@ -154,4 +160,5 @@ class ZodiacApi:
         if not self.user.is_logged_in():
             raise ValueError('User is not logged in')
         if self.user.is_expired():
+            self.log.info('Auth expired, refreshing...')
             self.refresh_auth()
