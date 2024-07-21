@@ -3,12 +3,12 @@ from __future__ import annotations
 from typing import Dict, List
 
 
-class Serializeable:
+class Serializable:
     def __init__(self):
         self._data: Dict[str, any] = {}
 
     @staticmethod
-    def deserialize_from_data(data: Dict[str, any], dto: Serializeable | List[Serializeable]) -> any:
+    def deserialize_from_data(data: Dict[str, any], dto: Serializable | List[Serializable]) -> any:
         if isinstance(dto, list):
             if not isinstance(data, list):
                 raise ValueError(f'Expected list, but got {data}')
@@ -30,11 +30,25 @@ class Serializeable:
             if key == '_data':
                 continue
 
-            if isinstance(default_val, Serializeable):
+            if isinstance(default_val, Serializable):
                 default_val.deserialize(data.get(key, {}))
                 continue
 
             self.__dict__[key] = data.get(key, default_val)
 
-    def get_raw(self) -> Dict[str, any]:
-        return self._data
+    def get_data(self) -> Dict[str, any]:
+        data = dict(self.__dict__)
+        del data['_data']
+        for key, value in data.items():
+            if isinstance(value, Serializable):
+                data[key] = value.get_data()
+                continue
+            if isinstance(value, List):
+                copy = list(value)
+                data[key] = copy
+                for x in range(0, len(copy)):
+                    if isinstance(copy[x], Serializable):
+                        copy[x] = copy[x].get_data()
+                        continue
+                continue
+        return data
