@@ -53,13 +53,13 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
 
-      - name: Publish
-        if: github.event_name == 'release'
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          twine upload dist/*
+      #- name: Publish
+      #  if: github.event_name == 'release'
+      #  env:
+      #    TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+      #    TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+      #  run: |
+      #    twine upload dist/*
 
       - uses: actions/upload-artifact@v3
         with:
@@ -71,7 +71,7 @@ jobs:
     if: github.event_name == 'release' || github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     env:
-      DOCKER_IMAGE: davidgiga1993/pollect
+      DOCKER_IMAGE: pahrens4711/pollect
 
     steps:
       - uses: actions/checkout@v3
