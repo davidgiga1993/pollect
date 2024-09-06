@@ -204,7 +204,18 @@ class SnmpGetSource(Source):
         for metric_def in self.metric_defs:
             self.oids.extend(metric_def.get_oids())
 
-        self.community = config.get('communityString', 'public')
+        # Add SNMP version parameter with a default value
+        self.snmp_version = config.get('snmpVersion', '1')
+
+        # SNMP v3 specific parameters
+        if self.snmp_version == '3':
+            self.username = config.get('username')
+            self.authKey = config.get('authKey')
+            self.authProtocol = config.get('authProtocol')
+            self.privKey = config.get('privKey')
+            self.privProtocol = config.get('privProtocol')
+        else:
+            self.community = config.get('communityString', 'public')
 
     def _probe(self) -> List[ValueSet]:
         snmp_values = self._get_values(self.oids)
@@ -229,7 +240,25 @@ class SnmpGetSource(Source):
                 values.update(self._get_values(chunk))
             return values
 
-        args = ['snmpget', '-v2c', '-c', self.community, self.host]
+        if self.snmp_version == '3':
+            args = [
+                'snmpget',
+                '-v', self.snmp_version,
+                '-l', 'authPriv',  # or another security level
+                '-u', self.username,
+                '-a', self.authProtocol,
+                '-A', self.authKey,
+                '-x', self.privProtocol,
+                '-X', self.privKey,
+                self.host
+                ]
+        else:
+            args = [
+                'snmpget',
+                '-v', self.snmp_version,
+                '-c', self.community,
+                self.host
+            ]
         args.extend(oids)
         lines = subprocess.check_output(args).decode('utf-8').splitlines()
 
