@@ -212,7 +212,7 @@ class SnmpGetSource(Source):
         if self.snmp_version == '3':
             self.username = config.get('username')
             self.authKeyName = config.get('authKeyName')
-            self.authKey = os.environ.get(self.authKeyName, defaultAuth)
+            self.authKey = os.environ.get(self.authKeyName, 'defaultAuth')
             if not self.authKey:
                 self.log.error(f"Auth key not found in environment for {self.authKeyName}")
             self.authProtocol = config.get('authProtocol')
