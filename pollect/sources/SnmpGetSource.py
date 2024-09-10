@@ -254,7 +254,7 @@ class SnmpGetSource(Source):
                 '-l', 'authPriv',  # or another security level
                 '-u', self.username,
                 '-a', self.authProtocol,
-                '-A', 'self.authKey',
+                '-A', self.authKey,
                 '-x', self.privProtocol,
                 '-X', self.privKey,
                 self.host
