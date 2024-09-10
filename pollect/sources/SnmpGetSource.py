@@ -212,12 +212,12 @@ class SnmpGetSource(Source):
         if self.snmp_version == '3':
             self.username = config.get('username')
             self.authKeyName = config.get('authKeyName')
-            self.authKey = os.environ.get(self.authKeyName)
+            self.authKey = os.environ.get(self.authKeyName, defaultAuth)
             if not self.authKey:
                 self.log.error(f"Auth key not found in environment for {self.authKeyName}")
             self.authProtocol = config.get('authProtocol')
             self.privKeyName = config.get('privKeyName')
-            self.privKey = os.environ.get(self.privKeyName)
+            self.privKey = os.environ.get(self.privKeyName, 'defaultPriv')
             if not self.privKey:
                 self.log.error(f"Priv key not found in environment for {self.privKeyName}")
             self.privProtocol = config.get('privProtocol')
@@ -254,7 +254,7 @@ class SnmpGetSource(Source):
                 '-l', 'authPriv',  # or another security level
                 '-u', self.username,
                 '-a', self.authProtocol,
-                '-A', self.authKey,
+                '-A', 'self.authKey',
                 '-x', self.privProtocol,
                 '-X', self.privKey,
                 self.host
