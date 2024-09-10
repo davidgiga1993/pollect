@@ -1,6 +1,7 @@
 import re
 import subprocess
 import time
+import os
 from typing import Dict, List, Optional
 
 from pollect.core.Log import Log
@@ -210,9 +211,11 @@ class SnmpGetSource(Source):
         # SNMP v3 specific parameters
         if self.snmp_version == '3':
             self.username = config.get('username')
-            self.authKey = config.get('authKey')
+            authKeyName = config.get('authKeyName')
+            authKey = os.environ.get(authKeyName)
             self.authProtocol = config.get('authProtocol')
-            self.privKey = config.get('privKey')
+            privKeyName = config.get('privKeyName')
+            privKey = os.environ.get(privKeyName)
             self.privProtocol = config.get('privProtocol')
         else:
             self.community = config.get('communityString', 'public')
@@ -247,9 +250,9 @@ class SnmpGetSource(Source):
                 '-l', 'authPriv',  # or another security level
                 '-u', self.username,
                 '-a', self.authProtocol,
-                '-A', self.authKey,
+                '-A', authKey,
                 '-x', self.privProtocol,
-                '-X', self.privKey,
+                '-X', privKey,
                 self.host
             ]
         elif self.snmp_version == '2c':
