@@ -212,10 +212,10 @@ class SnmpGetSource(Source):
         if self.snmp_version == '3':
             self.username = config.get('username')
             self.authKeyName = config.get('authKeyName')
-            self.authKey = os.environ.get(authKeyName)
+            self.authKey = os.environ.get(self.authKeyName)
             self.authProtocol = config.get('authProtocol')
             self.privKeyName = config.get('privKeyName')
-            self.privKey = os.environ.get(privKeyName)
+            self.privKey = os.environ.get(self.privKeyName)
             self.privProtocol = config.get('privProtocol')
         else:
             self.community = config.get('communityString', 'public')
