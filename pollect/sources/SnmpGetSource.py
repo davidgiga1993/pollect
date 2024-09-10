@@ -211,11 +211,11 @@ class SnmpGetSource(Source):
         # SNMP v3 specific parameters
         if self.snmp_version == '3':
             self.username = config.get('username')
-            authKeyName = config.get('authKeyName')
-            authKey = os.environ.get(authKeyName)
+            self.authKeyName = config.get('authKeyName')
+            self.authKey = os.environ.get(authKeyName)
             self.authProtocol = config.get('authProtocol')
-            privKeyName = config.get('privKeyName')
-            privKey = os.environ.get(privKeyName)
+            self.privKeyName = config.get('privKeyName')
+            self.privKey = os.environ.get(privKeyName)
             self.privProtocol = config.get('privProtocol')
         else:
             self.community = config.get('communityString', 'public')
@@ -250,9 +250,9 @@ class SnmpGetSource(Source):
                 '-l', 'authPriv',  # or another security level
                 '-u', self.username,
                 '-a', self.authProtocol,
-                '-A', authKey,
+                '-A', self.authKey,
                 '-x', self.privProtocol,
-                '-X', privKey,
+                '-X', self.privKey,
                 self.host
             ]
         elif self.snmp_version == '2c':
