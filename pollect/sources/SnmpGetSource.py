@@ -1,6 +1,7 @@
 import re
 import subprocess
 import time
+import os
 from typing import Dict, List, Optional
 
 from pollect.core.Log import Log
@@ -204,7 +205,17 @@ class SnmpGetSource(Source):
         for metric_def in self.metric_defs:
             self.oids.extend(metric_def.get_oids())
 
-        self.community = config.get('communityString', 'public')
+        self.snmp_version = config.get('snmpVersion', '1')
+        if self.snmp_version == '3':
+            self.username = config.get('username')
+            auth_key_name = config.get('authKeyName')
+            self.auth_key = os.environ.get(self.auth_key_name)
+            self.auth_protocol = config.get('authProtocol', 'SHA')
+            priv_key_name = config.get('privKeyName')
+            self.priv_key = os.environ.get(self.priv_key_name)
+            self.priv_protocol = config.get('privProtocol', 'AES')
+        else:
+            self.community = config.get('communityString', 'public')
 
     def _probe(self) -> List[ValueSet]:
         snmp_values = self._get_values(self.oids)
@@ -229,7 +240,25 @@ class SnmpGetSource(Source):
                 values.update(self._get_values(chunk))
             return values
 
-        args = ['snmpget', '-v1', '-c', self.community, self.host]
+        if self.snmp_version == '3':
+            args = [
+                'snmpget',
+                '-v', self.snmp_version,
+                '-l', 'authPriv',
+                '-u', self.username,
+                '-a', self.auth_protocol,
+                '-A', self.auth_key,
+                '-x', self.priv_protocol,
+                '-X', self.priv_key,
+                self.host
+            ]
+        else:
+            args = [
+                'snmpget',
+                '-v', self.snmp_version,
+                '-c', self.community,
+                self.host
+            ]
         args.extend(oids)
         lines = subprocess.check_output(args).decode('utf-8').splitlines()
 
