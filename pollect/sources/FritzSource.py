@@ -40,15 +40,15 @@ class FritzSource(Source):
         if service_name not in connection.services:
             # Use legacy fallback
             service_name = 'WANCommonIFC1'
+
+        data = ValueSet()
         output = connection.call_action(service_name, 'GetTotalBytesReceived')
         new_data['recv_bytes_sec'] = output['NewTotalBytesReceived']
+        data.add(Value(output['NewTotalBytesReceived'], name='recv_bytes'))
 
         output = connection.call_action(service_name, 'GetTotalBytesSent')
         new_data['sent_bytes_sec'] = output['NewTotalBytesSent']
-
-        data = ValueSet()
         data.add(Value(output['NewTotalBytesSent'], name='sent_bytes'))
-        data.add(Value(output['NewTotalBytesReceived'], name='recv_bytes'))
 
         # Calculate per-second
         for key, value in new_data.items():
@@ -57,7 +57,7 @@ class FritzSource(Source):
             if self._last_time == 0:
                 # First run
                 continue
-                
+
             if last_value is not None:
                 time_delta = int(time.time() - self._last_time)
                 value_delta = value - last_value
