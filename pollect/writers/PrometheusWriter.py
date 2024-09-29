@@ -181,7 +181,7 @@ class PrometheusWriter(Writer):
             for value_obj in value_set.values:
                 path = value_set.name
                 if value_obj.name is not None:
-                    path += '.' + value_obj.name
+                    path += '_' + value_obj.name
 
                 path = path.replace('-', '_').replace('.', '_').replace('!', '')
 

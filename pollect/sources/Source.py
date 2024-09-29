@@ -52,7 +52,7 @@ class Source(Log):
         """
         self.global_conf = global_conf
 
-    def probe(self) -> Optional[List[ValueSet]]:
+    def probe(self) -> List[ValueSet]:
         """
         Probes the data and returns it
 
@@ -60,7 +60,7 @@ class Source(Log):
         """
         results = self._probe()
         if results is None:
-            return None
+            return []
         if isinstance(results, ValueSet):
             results = [results]
         for result in results:
