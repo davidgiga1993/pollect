@@ -7,6 +7,11 @@ from pollect.sources.Source import Source
 
 
 class ZpoolIostat:
+    """
+    IO stats for all zpools
+    """
+    _process: subprocess.Popen
+
     def __init__(self):
         self._ticks = 0
         self._active = False
@@ -21,14 +26,14 @@ class ZpoolIostat:
         threading.Thread(target=self._run_process, args=[args]).start()
 
     def _run_process(self, args):
-        process = subprocess.Popen(
+        self._process = subprocess.Popen(
             args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
 
-        while process.poll() is None and self._active:
+        while self._process.poll() is None and self._active:
             capacity_set = ValueSet()
             io_set = ValueSet()
-            line = process.stdout.readline().decode('utf-8')
+            line = self._process.stdout.readline().decode('utf-8')
             segments = line.split('\t')
             if len(segments) < 7:
                 continue
@@ -46,6 +51,7 @@ class ZpoolIostat:
 
     def stop(self):
         self._active = False
+        self._process.terminate()
 
     def get_data(self) -> List[ValueSet]:
         """
@@ -87,6 +93,7 @@ class ZfsSource(Source):
     def __init__(self, config):
         super().__init__(config)
         self._iostats = ZpoolIostat()
+        self._ticks = 0
 
     def setup_source(self, global_conf):
         self._iostats.start()
@@ -95,5 +102,13 @@ class ZfsSource(Source):
         self._iostats.stop()
 
     def _probe(self) -> List[ValueSet]:
-        self.log.info('Probing...')
+        self._ticks += 1
+        if self._ticks > 120:
+            # Restart in case we got more or less zfs pools since the
+            # zpool iostats command doesn't catch that
+            self.log.info('Restarting zpool iostats')
+            self._iostats.stop()
+            self._iostats.start()
+            self._ticks = 0
+
         return self._iostats.get_data()

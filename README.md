@@ -307,6 +307,16 @@ of openhab (since it doesn't include all items).
 |-------|----------------|
 | url   | URL to openhab |
 
+## Zodiac Pool Cleaner `ZodiacPool`
+Provides metrics about the current state and remaining duration of the cleaning
+cycle. This source has been tested with the Zodiac Alpha 63 IQ and might 
+also work with other Zodiac devices.
+
+| Param    | Desc                |
+|----------|---------------------|
+| user     | Username            |
+| password | Password            |
+
 ## Audi MMI `MMI`
 
 Connects to the audi MMI backend and collects data. Requires the [audi api](https://github.com/davidgiga1993/AudiAPI)
@@ -403,6 +413,17 @@ Returns the expiry date of a https certificate. Requires `openssl` binary and `p
 - type: Certificate
   name: cert
   url: https://google.com
+```
+
+## PMCC source `Pmcc`
+
+Exports diagnostics metrics of the PMCC device. This allows easy detection of V2G timeouts and other
+fault conditions that prevent charging.
+
+```yml
+- type: Pmcc
+  url: https://....
+  password: <customer service password>
 ```
 
 # Writers

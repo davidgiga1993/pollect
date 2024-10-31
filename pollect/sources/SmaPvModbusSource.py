@@ -24,6 +24,7 @@ class SmaPvModbusSource(Source):
         base_set.add(Value(self._sma.read(SmaRegisters.REG_TEMP).get_as_base_unit(), name='temp'))
         base_set.add(Value(self._sma.read(SmaRegisters.REG_FREQUENCY).get_as_base_unit(), name='frequency'))
         base_set.add(Value(self._sma.read(SmaRegisters.REG_POWER_EFFECTIVE_SUM).get_as_base_unit(), name='power'))
+        base_set.add(Value(self._sma.read(SmaRegisters.REG_ENERGY_EFFECTIVE_SUM).get_as_base_unit(), name='energy'))
         base_set.add(Value(self._sma.read(SmaRegisters.REG_DC_INPUT_VOLTAGE).get_as_base_unit(), name='dc_voltage'))
         base_set.add(Value(self._sma.read(SmaRegisters.REG_DC_INPUT_CURRENT).get_as_base_unit(), name='dc_current'))
 

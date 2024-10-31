@@ -11,13 +11,21 @@ def u32(hold: ReadHoldingRegistersResponse) -> int:
     return hold.registers[0] << 16 | hold.registers[1]
 
 
+def u64(hold: ReadHoldingRegistersResponse) -> int:
+    return hold.registers[0] << 48 | hold.registers[1] << 32 | hold.registers[2] << 16 | hold.registers[3]
+
+
 class Register:
     id: int
     unit: Unit
+    count: int
 
-    def __init__(self, register: int, unit: Optional[Unit] = None):
+    def __init__(self, register: int, unit: Optional[Unit] = None, count: int = 2,
+                 decode=u32):
         self.id = register
         self.unit = unit
+        self.count = count
+        self.decode = decode
 
 
 class SmaRegisters:
@@ -27,6 +35,7 @@ class SmaRegisters:
     _hhz = Unit.hundredth('Hz')
     _hv = Unit.hundredth('V')
     _w = Unit.base('W')
+    _wh = Unit.base('Wh')
     _thdc = Unit.tenth('°C')
 
     REG_DEVICE_TYPE = Register(30051, None)
@@ -47,6 +56,7 @@ class SmaRegisters:
     REG_DC_INPUT_CURRENT = Register(30769, _ma)  # 0.001A
     REG_DC_INPUT_VOLTAGE = Register(30771, _hv)  # 0.01V
 
+    REG_ENERGY_EFFECTIVE_SUM = Register(30513, _wh, count=4, decode=u64)  # 1Wh
     REG_POWER_EFFECTIVE_SUM = Register(30775, _w)  # 1W
 
     REG_VOLTAGE_L1 = Register(30783, _hv)  # 0.01V
@@ -84,7 +94,7 @@ class SmaModbus(Log):
         self._is_connected = False
 
     def read(self, reg: Register) -> ValueWithUnit:
-        value = u32(self._client.read_holding_registers(reg.id, 2, self._unit_id))
+        value = reg.decode(self._client.read_holding_registers(reg.id, reg.count, self._unit_id))
         if value == 0xffffffff or value == 0x80000000:
             # Use 0 as a more sane "not available" value
             value = 0
