@@ -62,14 +62,14 @@ class ContainerNetworkUtils:
         namespace_ips_map = {}
 
         nic_ns = ContainerNetworkUtils.get_container_ips()
-        lines = subprocess.check_output(['ctr', '-n', 'k8s.io', 'containers', 'list', '-q']) \
-            .decode('utf-8').splitlines()
+        lines = (subprocess.check_output(['ctr', '-n', 'k8s.io', 'containers', 'list', '-q'],
+                                         stderr=subprocess.DEVNULL).decode('utf-8').splitlines())
 
         for container_id in lines:
             # Find the network namespace of the container
             try:
-                json_str = subprocess.check_output(['ctr', '-n', 'k8s.io', 'container', 'info', container_id]) \
-                    .decode('utf-8')
+                json_str = subprocess.check_output(['ctr', '-n', 'k8s.io', 'container', 'info', container_id],
+                                                   stderr=subprocess.DEVNULL).decode('utf-8')
             except subprocess.CalledProcessError as e:
                 if 'not found' in str(e):
                     # Container was just removed in the meantime
