@@ -36,7 +36,9 @@ setuptools.setup(
         'schedule',
         'prometheus-client',
         'PyYAML',
-        'requests'
+        'requests',
+        'opentelemetry-sdk',
+        'opentelemetry-exporter-otlp',
     ],
     entry_points={
         'console_scripts': ['pollect=pollect.Pollect:main'],
