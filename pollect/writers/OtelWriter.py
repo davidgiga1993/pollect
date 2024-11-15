@@ -33,7 +33,6 @@ class OtelWriter(Writer):
         Converts the value set and value object to a metric name
         Replaces all invalid characters with underscores
         """
-        print(type(value_obj))
         metric_name = value_set.name
         if value_obj.name is not None:
             metric_name += '.' + value_obj.name
