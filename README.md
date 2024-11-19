@@ -439,6 +439,22 @@ writer:
   cert: cert.pem
 ```
 
+## Otel http exporter `Otel
+
+Exports/Sends the data via OTLP (OpenTelemetry Protocol) over HTTP to a collector.
+
+```yaml
+writer:
+  type: Otel
+```
+
+You can use the common otel environment variables to configure the exporter.
+
+```bash
+export OTEL_EXPORTER_OTLP_HEADERS='Authorization=Basic xxx=='
+export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT='http://localhost:4318/v1/metrics'
+```
+
 # Multithreading
 
 By default, pollect executes all sources of a collection in parallel with 5 threads.
