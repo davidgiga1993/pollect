@@ -23,14 +23,14 @@ class TestSnmpGetSource(TestCase):
         std_out = 'iso.3.6.1.2.1.16.1.1.1.3.48 = Counter32: 123'
         mock_check_output.return_value = std_out.encode('utf-8')
 
-        source = SnmpGetSource({
+        source = SnmpGetSource(ConfigContainer({
             'host': '10.1.1.1',
             'metrics': [{
                 'oid': 'iso.3.6.1.2.1.16.1.1.1.3.48',
                 'name': 'Test'
             }],
             'type': '-'
-        })
+        }))
 
         data = source.probe()[0]
         self.assertEqual(1, len(data.values))
@@ -125,18 +125,18 @@ iso.3.6.1.2.1.31.1.1.1.18.3 = STRING: "test name3"
                 'name': 'Test'
             },
                 {
-                'oid': 'iso.3.6.1.2.1.50.1.1.1.3.${randomParam}',
-                'oidLabels': {
-                    # Use the same labels as for the metric above
-                    'portName': 'iso.3.6.1.2.1.31.1.1.1.18.${randomParam}'
-                },
-                'range': {
-                    'from': 1,
-                    'to': 3,
-                    'label': 'randomParam',
-                },
-                'name': 'Test'
-            }],
+                    'oid': 'iso.3.6.1.2.1.50.1.1.1.3.${randomParam}',
+                    'oidLabels': {
+                        # Use the same labels as for the metric above
+                        'portName': 'iso.3.6.1.2.1.31.1.1.1.18.${randomParam}'
+                    },
+                    'range': {
+                        'from': 1,
+                        'to': 3,
+                        'label': 'randomParam',
+                    },
+                    'name': 'Test'
+                }],
             'type': '-'
         })
         source = SnmpGetSource(config)
@@ -172,7 +172,7 @@ iso.3.6.1.2.1.31.1.1.1.18.3 = STRING: "test name3"
         std_out = 'iso.3.6.1.2.1.16.1.1.1.3.48 = Counter32: 0'
         mock_check_output.return_value = std_out.encode('utf-8')
 
-        source = SnmpGetSource({
+        source = SnmpGetSource(ConfigContainer({
             'host': '10.1.1.1',
             'metrics': [{
                 'oid': 'iso.3.6.1.2.1.16.1.1.1.3.48',
@@ -180,7 +180,7 @@ iso.3.6.1.2.1.31.1.1.1.18.3 = STRING: "test name3"
                 'mode': 'rate'
             }],
             'type': '-'
-        })
+        }))
 
         # First run returns nothing
         data = source.probe()[0]
@@ -192,14 +192,14 @@ iso.3.6.1.2.1.31.1.1.1.18.3 = STRING: "test name3"
         data = source.probe()[0]
         self.assertEqual(1, len(data.values))
         # 10 units / second
-        self.assertAlmostEqual(10, data.values[0].value, 0)
+        self.assertAlmostEqual(10.0, data.values[0].value, 0)
 
     @patch('pollect.sources.SnmpGetSource.subprocess.check_output')
     def test_rate_overflow(self, mock_check_output):
         std_out = 'iso.3.6.1.2.1.16.1.1.1.3.48 = Counter32: 4294967290'
         mock_check_output.return_value = std_out.encode('utf-8')
 
-        source = SnmpGetSource({
+        source = SnmpGetSource(ConfigContainer({
             'host': '10.1.1.1',
             'metrics': [{
                 'oid': 'iso.3.6.1.2.1.16.1.1.1.3.48',
@@ -207,7 +207,7 @@ iso.3.6.1.2.1.31.1.1.1.18.3 = STRING: "test name3"
                 'mode': 'rate'
             }],
             'type': '-'
-        })
+        }))
 
         # First run returns nothing
         data = source.probe()[0]
@@ -219,4 +219,4 @@ iso.3.6.1.2.1.31.1.1.1.18.3 = STRING: "test name3"
         data = source.probe()[0]
         self.assertEqual(1, len(data.values))
         # 10 units / second
-        self.assertAlmostEqual(16, data.values[0].value, 0)
+        self.assertAlmostEqual(16.0, data.values[0].value, 0)
