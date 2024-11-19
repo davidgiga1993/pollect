@@ -452,7 +452,7 @@ You can use the common otel environment variables to configure the exporter.
 
 ```bash
 export OTEL_EXPORTER_OTLP_HEADERS='Authorization=Basic xxx=='
-export OTEL_EXPORTER_OTLP_ENDPOINT='http://localhost:4318'
+export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT='http://localhost:4318/v1/metrics'
 ```
 
 # Multithreading
