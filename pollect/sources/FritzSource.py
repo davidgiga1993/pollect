@@ -54,18 +54,17 @@ class FritzSource(Source):
         for key, value in new_data.items():
             last_value = self._stats.get(key)
             self._stats[key] = value
-            if self._last_time == 0:
+            if last_value is None:
                 # First run
                 continue
 
-            if last_value is not None:
-                time_delta = int(time.time() - self._last_time)
-                value_delta = value - last_value
-                if value_delta < 0:
-                    # Overflow happened (previously value was > than current value)
-                    value_delta = (self.MAX_COUNTER - last_value) + value
+            time_delta = int(time.time() - self._last_time)
+            value_delta = value - last_value
+            if value_delta < 0:
+                # Overflow happened (previously value was > than current value)
+                value_delta = (self.MAX_COUNTER - last_value) + value
 
-                data.add(Value(value_delta / time_delta, name=key))
+            data.add(Value(value_delta / time_delta, name=key))
 
         self._last_time = time.time()
         return data
