@@ -4,3 +4,5 @@ requests
 gevent
 pyOpenSSL
 websocket-client
+opentelemetry-sdk
+opentelemetry-exporter-otlp

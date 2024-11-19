@@ -321,7 +321,7 @@ package. Note: This pacakge is currently broken due to API changes.
 
 ## Google Play Developer Console `Gdc`
 
-Provides app statistics from the google play developer console. Requires the google-cloud-storage package.
+Provides app statistics from the google play developer console. Requires the `google-cloud-storage` package.
 
 **Important** each fetch will call the google cloud storage api to check for updates so make sure to call is less
 frequent (every 30min or so).
@@ -442,6 +442,7 @@ writer:
 ## Otel http exporter `Otel
 
 Exports/Sends the data via OTLP (OpenTelemetry Protocol) over HTTP to a collector.
+Requires the `opentelemetry-sdk` and `opentelemetry-exporter-otlp` package.
 
 ```yaml
 writer:
