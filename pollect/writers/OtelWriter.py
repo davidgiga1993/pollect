@@ -1,5 +1,5 @@
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.sources.Source import Source
 from pollect.writers.Writer import Writer
@@ -28,17 +28,6 @@ class OtelWriter(Writer):
     def stop(self):
         pass
 
-    def get_metric_name(self, value_set: ValueSet, value_obj: Value):
-        """
-        Converts the value set and value object to a metric name
-        Replaces all invalid characters with underscores
-        """
-        metric_name = value_set.name
-        if value_obj.name is not None:
-            metric_name += '.' + value_obj.name
-        metric_name = metric_name.replace('-', '_').replace('.', '_').replace('!', '')
-        return metric_name
-
     def get_or_create_gauge(self, name: str):
         """
         Gets or creates a gauge with the given meter.
@@ -51,7 +40,7 @@ class OtelWriter(Writer):
         self.gauges[name] = gauge
         return gauge
     
-    def get_attributes_from_labels(self, labels: list, label_values: list):
+    def get_attributes_from_labels(self, labels: List[str], label_values: List[str]) -> Dict[str, str]:
         """
         Converts the labels used for prometheus to attributes used for opentelemetry
         """
@@ -63,7 +52,6 @@ class OtelWriter(Writer):
     def write(self, data: List[ValueSet], source_ref: Optional[Source] = None):
         for value_set in data:
             for value_obj in value_set.values:
-                metric_name = self.get_metric_name(value_set, value_obj)
-                gauge = self.get_or_create_gauge(metric_name)
+                gauge = self.get_or_create_gauge(value_set.name)
                 attributes = self.get_attributes_from_labels(value_set.labels, value_obj.label_values)
                 gauge.set(value_obj.value, attributes=attributes)
