@@ -21,7 +21,7 @@ class TestNetworkStats(TestCase):
     def test_get_k8s_namespace_ips(self, subprocess):
         self._own = pathlib.Path(__file__).parent.resolve()
 
-        def check_output(args):
+        def check_output(args, **kwargs):
             if args[0] == 'ctr':
                 if args[4] == 'list':
                     # list container
@@ -43,7 +43,7 @@ class TestNetworkStats(TestCase):
 cni-565d2649-233b-0f48-3470-ca134bb8af0e (id: 2)
 cni-6d7a0806-3c24-9460-adae-a1d4652b31c4 (id: 1)
 cni-0b55048d-00de-1d0a-c4bd-ffd265423655 (id: 0)""".encode('utf-8')
-            if len(args) == 8:
+            if len(args) == 8: # ip netns exec cni-.. ip add show eht0
                 return """2: eth0@if6: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 8951 qdisc noqueue state UP group default qlen 1000
     link/ether 4e:f1:7e:f0:81:2e brd ff:ff:ff:ff:ff:ff link-netnsid 0
     inet 172.16.95.1/32 scope global eth0
