@@ -180,15 +180,24 @@ Bind DNS server statistics.
 
 ## SNMP `SnmpGet`
 
-Wrapper for the snmpget binary.
+Wrapper for the snmpget binary, supports snmp v1 and v3
 
 ```yaml
 type: SnmpGet
 name: Procurve
 # Host which should be contacted
 host: 10.1.100.1
-# Community string (public by default)
+
+# v1 only: Community string (public by default)
 communityString: public
+# v3 section:
+snmpVersion: 3 # 1 by default
+username: test # Security name
+authPassPhrase: ${AUTH_PASS} # authentication protocol pass phrase
+authProtocol: SHA # Can be MD5 or SHA (default)
+privacyPassPhrase: ${PRIV_PASS} # privacy protocol pass phrase
+privacyProtocol: SHA # Can be MD5 or SHA (default)
+
 # Metrics which should be collected
 # Each metric can query one or more oids
 metrics:
