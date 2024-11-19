@@ -169,6 +169,13 @@ Wrapper for the linux `sensors` utility. Collects sensor data such as temps and 
 | exclude      | Name of chips which should be excluded. Can be empty                                         |
 | useBaseUnits | Set to `False` to report the raw values in their reported unit (for example mV instead of V) |
 
+## Kubernetes Network Traffic `K8sNamespaceTraffic`
+
+Monitors the per-namespace traffic.
+
+See [Kubernetes Network Insights](docs/K8sNetwork.md) for more details.
+
+
 ## DNS server statistics `Bind`
 
 Bind DNS server statistics.

@@ -30,7 +30,7 @@ class SmaEnergyMeterSource(Source):
             self._cache.add(value)
         self._cache.release()
 
-    def setup(self, global_conf):
+    def setup_source(self, global_conf):
         self._sma.start()
 
     def shutdown(self):

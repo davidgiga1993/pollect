@@ -33,7 +33,7 @@ class TestZfsSource(TestCase):
 
         data = {'type': '-'}
         source = ZfsSource(data)
-        source.setup({})
+        source.setup_source({})
         sleep(1)
         results = source.probe()
         source.shutdown()

@@ -19,8 +19,8 @@ class HomematicIpSource(Source):
         self._access_point = config['accessPoint']
         self._home = None
 
-    def setup(self, global_conf):
-        super().setup(global_conf)
+    def setup_source(self, global_conf):
+        super().setup_source(global_conf)
         self._home = Home()
         self._home.set_auth_token(self._auth_token)
         self._home.init(self._access_point)

@@ -10,4 +10,4 @@ class TestZodiacApi(unittest.TestCase):
         robot.cycleStartTime = (time.time() - 60 * 60)  # 1h ago
         robot.prCyc = ProgramCycles.SMART_CLEAN
         robot.durations.smartTim = 160
-        self.assertEquals(100,  round(robot.get_remaining_time()/60))
+        self.assertEqual(100, round(robot.get_remaining_time() / 60))
