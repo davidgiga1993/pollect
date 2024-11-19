@@ -19,7 +19,7 @@ class FritzSource(Source):
         self._pass = config.get('pass')
         self._address = config.get('ip')
 
-        self._last_time = None
+        self._last_time = 0
         """
         Timestamp of the last run
         
@@ -40,24 +40,31 @@ class FritzSource(Source):
         if service_name not in connection.services:
             # Use legacy fallback
             service_name = 'WANCommonIFC1'
+
+        data = ValueSet()
         output = connection.call_action(service_name, 'GetTotalBytesReceived')
         new_data['recv_bytes_sec'] = output['NewTotalBytesReceived']
+        data.add(Value(output['NewTotalBytesReceived'], name='recv_bytes'))
 
         output = connection.call_action(service_name, 'GetTotalBytesSent')
         new_data['sent_bytes_sec'] = output['NewTotalBytesSent']
+        data.add(Value(output['NewTotalBytesSent'], name='sent_bytes'))
 
-        data = ValueSet()
+        # Calculate per-second
         for key, value in new_data.items():
-            last_stats = self._stats.get(key)
+            last_value = self._stats.get(key)
             self._stats[key] = value
-            if last_stats is not None:
-                time_delta = int(time.time() - self._last_time)
-                value_delta = value - last_stats
-                if value_delta < 0:
-                    # Overflow happened (previously value was > than current value)
-                    value_delta = value + self.MAX_COUNTER
+            if last_value is None:
+                # First run
+                continue
 
-                data.add(Value(value_delta / time_delta, name=key))
+            time_delta = int(time.time() - self._last_time)
+            value_delta = value - last_value
+            if value_delta < 0:
+                # Overflow happened (previously value was > than current value)
+                value_delta = (self.MAX_COUNTER - last_value) + value
+
+            data.add(Value(value_delta / time_delta, name=key))
 
         self._last_time = time.time()
         return data

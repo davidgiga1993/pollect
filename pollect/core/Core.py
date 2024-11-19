@@ -5,12 +5,11 @@ import traceback
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import List, Dict, Optional
 
-from pollect.core.ValueSet import ValueSet
-
 from pollect.core.Factories import WriterFactory, SourceFactory
 from pollect.core.Log import Log
-from pollect.sources.Source import Source
+from pollect.core.ValueSet import ValueSet
 from pollect.core.config.ConfigContainer import ConfigContainer
+from pollect.sources.Source import Source
 from pollect.writers.Writer import Writer
 
 
@@ -19,9 +18,9 @@ class Configuration:
     General configuration
     """
 
-    writer: Optional[Writer] = None
+    writers: List[Writer] = None
     """
-    Global data writer which should be used by default
+    Global data writers which should be used by default
     """
 
     tick_time: int
@@ -30,15 +29,20 @@ class Configuration:
     """
 
     def __init__(self, config, dry_run: bool = False):
+        self.writers = []
         self.config = ConfigContainer(config)
         self.tick_time = self.config.get('tickTime', 10)
         self.thread_count = self.config.get('threads', 5)
 
         self.writer_factory = WriterFactory(dry_run)
 
+        writer_configs = self.config.get('writers', [])
         writer_config = self.config.get('writer')
         if writer_config is not None:
-            self.writer = self.writer_factory.create(writer_config)
+            writer_configs.append(writer_config)
+
+        for config in writer_configs:
+            self.writers.append(self.writer_factory.create(config))
 
     def create_executors(self) -> List[Executor]:
         executors = []
@@ -46,7 +50,7 @@ class Configuration:
         for item in self.config.get('executors'):
             thread_pool = ThreadPoolExecutor(max_workers=self.thread_count)
             executor = Executor(thread_pool, item, self)
-            executor.create_writer(self.writer, self.writer_factory)
+            executor.create_writers(self.writers, self.writer_factory)
             executor.initialize_objects(source_factory)
             executors.append(executor)
         return executors
@@ -58,7 +62,7 @@ class Executor(Log):
     """
 
     config: Dict[str, any]
-    writer: Writer
+    writers: List[Writer]
     tick_time: int = 0
     collection_name: str
     global_config: Configuration
@@ -81,17 +85,23 @@ class Executor(Log):
         self.collection_name = exec_config.get('collection')
         self.global_config = global_config
         self._sources = []
+        self.writers = []
 
-    def create_writer(self, writer: Optional[Writer], writer_factory: WriterFactory):
+    def create_writers(self, writers: List[Writer], writer_factory: WriterFactory):
         writer_config = self.config.get('writer')
-        if writer_config is None and writer is None:
+        if writer_config is None and len(writers) == 0:
             raise KeyError('No global or local writer configuration not found')
         if writer_config is None:
             # Use default writer
-            self.writer = writer
-            return
+            self.writers.extend(writers)
+        else:
+            self.writers.append(writer_factory.create(writer_config))
 
-        self.writer = writer_factory.create(writer_config)
+        partial_write = self.writers[0].supports_partial_write()
+        if len(self.writers) > 1:
+            for writer in self.writers[1:]:
+                if partial_write != writer.supports_partial_write():
+                    raise ValueError('Multiple writers must all have the same "partial_write" feature support')
 
     def initialize_objects(self, factory: SourceFactory):
         """
@@ -116,14 +126,15 @@ class Executor(Log):
         self.thread_pool.shutdown()
         for source in self._sources:
             source.shutdown()
-        self.writer.stop()
+        for writer in self.writers:
+            writer.stop()
 
     def execute(self):
         """
         Probes all data sources and writes the data using the current writer
         """
         self.log.debug(f'Executing {self.collection_name}')
-        partial_write = self.writer.supports_partial_write()
+        partial_write = self.writers[0].supports_partial_write()
         futures = []
 
         for source in self._sources:
@@ -140,7 +151,7 @@ class Executor(Log):
         for future in futures:
             # noinspection PyTypeChecker
             self._merge(future.result(), data)
-        self._write(data, self)
+        self._write(data, None, False)
 
     def _probe_and_write(self, source: Source):
         """
@@ -150,14 +161,15 @@ class Executor(Log):
         value_sets = self._probe(source)
         data = []
         self._merge(value_sets, data)
-        self._write(data, source)
+        self._write(data, source, True)
 
-    def _probe(self, source: Source) -> Optional[List[ValueSet]]:
+    def _probe(self, source: Source) -> List[ValueSet]:
         """
         Probes a single source
         :param source: Source
         :return: The probe result data
         """
+
         log_tag = f'{self.collection_name}/{source}'
         self.log.info(f'Collecting data from {log_tag}')
         now = int(time.time())
@@ -171,7 +183,7 @@ class Executor(Log):
             # Catch all errors that could occur and ignore them
             traceback.print_exc()
             self.log.error(f'Error while probing using source {log_tag}: {e}')
-        return None
+        return []
 
     def _merge(self, value_sets: List[ValueSet], results: List[ValueSet]):
         """
@@ -188,11 +200,12 @@ class Executor(Log):
                 value_set.name = self.collection_name
             results.append(value_set)
 
-    def _write(self, value_sets: List[ValueSet], source_ref: object):
+    def _write(self, value_sets: List[ValueSet], source_ref: Optional[Source], partial_writers_filter: bool):
         """
         Writes the given value sets using the current exporter
         :param value_sets: Value sets
         :param source_ref: Reference object which collected the data.
+        :param partial_writers_filter: True to only write the partial writers, False to write the full writer
         This is used to detect if a metric has been removed
         """
         if len(value_sets) == 0:
@@ -200,7 +213,10 @@ class Executor(Log):
 
         # Write the data
         self.log.debug(f'Writing data for {self.collection_name}')
-        try:
-            self.writer.write(value_sets, source_ref)
-        except Exception as e:
-            self.log.error(f'Could not write data: {e}')
+        for writer in self.writers:
+            if partial_writers_filter != writer.supports_partial_write():
+                continue
+            try:
+                writer.write(value_sets, source_ref)
+            except Exception as e:
+                self.log.error(f'Could not write data: {e}')
