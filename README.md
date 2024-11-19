@@ -187,15 +187,24 @@ Bind DNS server statistics.
 
 ## SNMP `SnmpGet`
 
-Wrapper for the snmpget binary.
+Wrapper for the snmpget binary, supports snmp v1 and v3
 
 ```yaml
 type: SnmpGet
 name: Procurve
 # Host which should be contacted
 host: 10.1.100.1
-# Community string (public by default)
+
+# v1 only: Community string (public by default)
 communityString: public
+# v3 section:
+snmpVersion: 3 # 1 by default
+username: test # Security name
+authPassPhrase: ${AUTH_PASS} # authentication protocol pass phrase
+authProtocol: SHA # Can be MD5 or SHA (default)
+privacyPassPhrase: ${PRIV_PASS} # privacy protocol pass phrase
+privacyProtocol: SHA # Can be MD5 or SHA (default)
+
 # Metrics which should be collected
 # Each metric can query one or more oids
 metrics:
@@ -329,7 +338,7 @@ package. Note: This pacakge is currently broken due to API changes.
 
 ## Google Play Developer Console `Gdc`
 
-Provides app statistics from the google play developer console. Requires the google-cloud-storage package.
+Provides app statistics from the google play developer console. Requires the `google-cloud-storage` package.
 
 **Important** each fetch will call the google cloud storage api to check for updates so make sure to call is less
 frequent (every 30min or so).
@@ -456,6 +465,23 @@ writer:
   port: 8000
   key: key.key
   cert: cert.pem
+```
+
+## Otel http exporter `Otel
+
+Exports/Sends the data via OTLP (OpenTelemetry Protocol) over HTTP to a collector.
+Requires the `opentelemetry-sdk` and `opentelemetry-exporter-otlp` package.
+
+```yaml
+writer:
+  type: Otel
+```
+
+You can use the common otel environment variables to configure the exporter.
+
+```bash
+export OTEL_EXPORTER_OTLP_HEADERS='Authorization=Basic xxx=='
+export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT='http://localhost:4318/v1/metrics'
 ```
 
 # Multithreading
