@@ -53,9 +53,9 @@ class TestCore(TestCase):
         scheduler = ExecutionScheduler(config, executors)
 
         def run():
-            self.assertIsInstance(config.writer, InMemoryWriter)
-            data = config.writer.data
-            self.assertEqual(config.writer.write_calls, 1)
+            self.assertIsInstance(config.writers[0], InMemoryWriter)
+            data = config.writers[0].data
+            self.assertEqual(config.writers[0].write_calls, 1)
             self.assertGreater(len(data), 0)
             self.assertEqual('10', data[0][0].values[0].value)
             self.assertEqual('1', data[0][1].values[0].value)
@@ -87,8 +87,8 @@ class TestCore(TestCase):
         scheduler = ExecutionScheduler(config, executors)
 
         def run():
-            self.assertIsInstance(config.writer, InMemoryWriter)
-            data = config.writer.data
+            self.assertIsInstance(config.writers[0], InMemoryWriter)
+            data = config.writers[0].data
             self.assertGreater(len(data), 0)
 
         self._run_and_stop(scheduler, 1, run)
@@ -157,11 +157,11 @@ class TestCore(TestCase):
         scheduler = ExecutionScheduler(config, executors)
 
         def run():
-            self.assertIsInstance(config.writer, ParallelInMemoryWriter)
+            self.assertIsInstance(config.writers[0], ParallelInMemoryWriter)
             # Wait for the jobs to complete
             sleep(2.5)
-            data = config.writer.data
-            self.assertEqual(config.writer.write_calls, 2)
+            data = config.writers[0].data
+            self.assertEqual(config.writers[0].write_calls, 2)
             self.assertEqual(len(data), 2)
 
         self._run_and_stop(scheduler, 1, run)
@@ -205,12 +205,12 @@ class TestCore(TestCase):
         scheduler = ExecutionScheduler(config, executors)
 
         def run():
-            self.assertIsInstance(config.writer, ParallelInMemoryWriter)
+            self.assertIsInstance(config.writers[0], ParallelInMemoryWriter)
             # Wait for the collection b to complete a couple of times
             sleep(2)
-            data = config.writer.data
-            print(f'Write calls: {config.writer.write_calls}')
-            self.assertTrue(config.writer.write_calls >= 2)
+            data = config.writers[0].data
+            print(f'Write calls: {config.writers[0].write_calls}')
+            self.assertTrue(config.writers[0].write_calls >= 2)
             for entry in data:
                 for value in entry:
                     self.assertEqual(4, value.values[0].value)
