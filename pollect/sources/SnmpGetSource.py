@@ -1,11 +1,9 @@
 import re
 import subprocess
 import time
-import os
 from typing import Dict, List, Optional
 
 from pollect.core.Log import Log
-
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.core.config.ConfigContainer import ConfigContainer
 from pollect.libs.Utils import chunks
@@ -197,23 +195,22 @@ class SnmpGetSource(Source):
     Wrapper for snmpget
     """
 
-    def __init__(self, config):
+    def __init__(self, config: ConfigContainer):
         super().__init__(config)
         self.host = config['host']
-        self.metric_defs = [MetricDefinition(x) for x in config['metrics']]  # type: List[MetricDefinition]
-        self.oids = []  # type: List[str]
+        self.metric_defs: List[MetricDefinition] = [MetricDefinition(x) for x in config['metrics']]
+        self.oids: List[str] = []
         for metric_def in self.metric_defs:
             self.oids.extend(metric_def.get_oids())
 
-        self.snmp_version = config.get('snmpVersion', '1')
-        if self.snmp_version == '3':
-            self.username = config.get('username')
-            auth_key_name = config.get('authKeyName')
-            self.auth_key = os.environ.get(self.auth_key_name)
+        self.snmp_version = config.get('snmpVersion', 1)
+        if self.snmp_version == 3:
+            self.username = config.get('username', required=True)
+            self.auth_key = config.get('authPassPhrase', required=True)
             self.auth_protocol = config.get('authProtocol', 'SHA')
-            priv_key_name = config.get('privKeyName')
-            self.priv_key = os.environ.get(self.priv_key_name)
-            self.priv_protocol = config.get('privProtocol', 'AES')
+
+            self.priv_key = config.get('privacyPassPhrase', required=True)
+            self.priv_protocol = config.get('privacyProtocol', 'AES')
         else:
             self.community = config.get('communityString', 'public')
 
@@ -240,25 +237,7 @@ class SnmpGetSource(Source):
                 values.update(self._get_values(chunk))
             return values
 
-        if self.snmp_version == '3':
-            args = [
-                'snmpget',
-                '-v', self.snmp_version,
-                '-l', 'authPriv',
-                '-u', self.username,
-                '-a', self.auth_protocol,
-                '-A', self.auth_key,
-                '-x', self.priv_protocol,
-                '-X', self.priv_key,
-                self.host
-            ]
-        else:
-            args = [
-                'snmpget',
-                '-v', self.snmp_version,
-                '-c', self.community,
-                self.host
-            ]
+        args = self._build_args()
         args.extend(oids)
         lines = subprocess.check_output(args).decode('utf-8').splitlines()
 
@@ -279,3 +258,24 @@ class SnmpGetSource(Source):
                 value = float(match.group(3))
             values[oid] = SnmpValue(val_type, value)
         return values
+
+    def _build_args(self) -> List[str]:
+        if self.snmp_version == '3':
+            return [
+                'snmpget',
+                '-v', self.snmp_version,
+                '-l', 'authPriv',
+                '-u', self.username,
+                '-a', self.auth_protocol,
+                '-A', self.auth_key,
+                '-x', self.priv_protocol,
+                '-X', self.priv_key,
+                self.host
+            ]
+
+        return [
+            'snmpget',
+            '-v', self.snmp_version,
+            '-c', self.community,
+            self.host
+        ]
