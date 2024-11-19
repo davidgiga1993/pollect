@@ -53,8 +53,9 @@ class TestCore(TestCase):
         }
 
         def run(config: Configuration):
-            self.assertIsInstance(config.writer, InMemoryWriter)
-            data = config.writer.data
+            writer = config.writers[0]
+            self.assertIsInstance(writer, InMemoryWriter)
+            data = writer.data
             self.assertGreater(len(data), 0)
 
         test.run(raw_config, run)
@@ -89,9 +90,10 @@ class TestCore(TestCase):
         os.environ['VALUE'] = '10'
 
         def run(config: Configuration):
-            self.assertIsInstance(config.writer, InMemoryWriter)
-            data = config.writer.data
-            self.assertEqual(config.writer.write_calls, 1)
+            writer = config.writers[0]
+            self.assertIsInstance(writer, InMemoryWriter)
+            data = writer.data
+            self.assertEqual(writer.write_calls, 1)
             self.assertGreater(len(data), 0)
             self.assertEqual('10', data[0][0].values[0].value)
             self.assertEqual('1', data[0][1].values[0].value)
@@ -182,9 +184,10 @@ class TestCore(TestCase):
         }
 
         def verify(config: Configuration):
-            self.assertIsInstance(config.writer, ParallelInMemoryWriter)
-            data = config.writer.data
-            self.assertEqual(config.writer.write_calls, 2)
+            writer = config.writers[0]
+            self.assertIsInstance(writer, ParallelInMemoryWriter)
+            data = writer.data
+            self.assertEqual(writer.write_calls, 2)
             self.assertEqual(len(data), 2)
 
         test.run(raw_config, verify)
