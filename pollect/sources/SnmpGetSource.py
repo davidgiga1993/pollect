@@ -260,7 +260,7 @@ class SnmpGetSource(Source):
         return values
 
     def _build_args(self) -> List[str]:
-        if self.snmp_version == '3':
+        if self.snmp_version == 3:
             return [
                 'snmpget',
                 '-v', self.snmp_version,
