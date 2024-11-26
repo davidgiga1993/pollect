@@ -239,7 +239,7 @@ class SnmpGetSource(Source):
 
         args = self._build_args()
         args.extend(oids)
-        lines = subprocess.check_output(args).decode('utf-8').splitlines()
+        lines = subprocess.check_output([str(x) for x in args]).decode('utf-8').splitlines()
 
         values = {}
         for line in lines:
