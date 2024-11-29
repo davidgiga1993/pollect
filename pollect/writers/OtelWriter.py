@@ -30,9 +30,17 @@ class OtelWriter(Writer):
     def write(self, data: List[ValueSet], source_ref: Optional[Source] = None):
         for value_set in data:
             for value_obj in value_set.values:
-                gauge = self._get_or_create_gauge(value_set.name)
+                metric_name = value_set.name
+                if value_obj.name is not None:
+                    metric_name += "_" + value_obj.name
+
+                gauge = self._get_or_create_gauge(metric_name)
                 attributes = self._get_attributes_from_labels(value_set.labels, value_obj.label_values)
-                gauge.set(value_obj.value, attributes=attributes)
+                try:
+                    value = float(value_obj.value)
+                    gauge.set(value, attributes=attributes)
+                except ValueError:
+                    self.log.error(f"Could not convert value {value_obj.value} to float")
 
     def _get_or_create_gauge(self, name: str) -> ObservableGauge:
         """
