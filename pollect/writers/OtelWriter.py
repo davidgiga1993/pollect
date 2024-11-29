@@ -40,7 +40,7 @@ class OtelWriter(Writer):
                     value = float(value_obj.value)
                     gauge.set(value, attributes=attributes)
                 except ValueError:
-                    print(f"Could not convert value {value_obj.value} to float")
+                    self.log.error(f"Could not convert value {value_obj.value} to float")
 
     def _get_or_create_gauge(self, name: str) -> ObservableGauge:
         """
