@@ -219,4 +219,4 @@ class Executor(Log):
             try:
                 writer.write(value_sets, source_ref)
             except Exception as e:
-                self.log.error(f'Could not write data: {e}')
+                self.log.error(f'Could not write data: {e}, source: {source_ref}')
