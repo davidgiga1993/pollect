@@ -32,6 +32,9 @@ class PmccData:
     """
 
     def __init__(self):
+        self.soc = 0
+        self.start_soc = 0
+        self.ev_charge_rate = 0
         self.phasePower = [0, 0, 0]
 
 

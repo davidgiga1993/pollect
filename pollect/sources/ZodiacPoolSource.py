@@ -25,10 +25,9 @@ class ZodiacPoolSource(Source):
     def setup(self, global_conf):
         super().setup(global_conf)
 
-        # Restore auth
+        # Restore auth (if possible)
         if not os.path.isfile(self.AUTH_FILE):
-            self.api.login(self._user, self._password)
-            self._persist_auth()
+            self._login()
             return
 
         with open(self.AUTH_FILE, "r") as f:
@@ -36,7 +35,14 @@ class ZodiacPoolSource(Source):
 
         reply = LoginReply()
         reply.deserialize(login_data)
-        self.api.user = reply
+        # Verify login
+        try:
+            self.api.get_system_list_v2()
+            self.api.user = reply
+        except ValueError as e:
+            self.log.warning(f'{e}, trying to login again')
+            self._login()
+            return
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
         values = ValueSet(labels=['device_serial'])
@@ -64,3 +70,7 @@ class ZodiacPoolSource(Source):
         self.expires_in = self.api.user.userPoolOAuth.ExpiresIn
         with open(self.AUTH_FILE, "w") as f:
             json.dump(self.api.user.get_data(), f)
+
+    def _login(self):
+        self.api.login(self._user, self._password)
+        self._persist_auth()
