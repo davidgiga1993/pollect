@@ -28,8 +28,8 @@ class EspHomeSource(Source):
         psk = config['psk']
         self._api = aioesphomeapi.APIClient(hostname, port, password='', noise_psk=psk)
 
-    def setup(self, global_conf):
-        super().setup(global_conf)
+    def setup_source(self, global_conf):
+        super().setup_source(global_conf)
         self._loop = asyncio.new_event_loop()
         self._connect_async()
 

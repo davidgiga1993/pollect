@@ -22,8 +22,8 @@ class ZodiacPoolSource(Source):
         self.api = ZodiacApi()
         self.expires_in = 0
 
-    def setup(self, global_conf):
-        super().setup(global_conf)
+    def setup_source(self, global_conf):
+        super().setup_source(global_conf)
 
         # Restore auth (if possible)
         if not os.path.isfile(self.AUTH_FILE):
