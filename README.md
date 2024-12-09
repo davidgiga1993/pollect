@@ -245,15 +245,6 @@ Provides simple ZFS pool sizing and performance metrics.
 Connects to the fritzbox api and collects WAN statistics. Requires
 the [fritzconnection](https://pypi.org/project/fritzconnection) package.
 
-## EVCC `Evcc`
-
-Exposes the values shown in the EVCC web-ui as metrics.
-Requires the `websocket-client` package.
-
-| Param |     | Desc                                                       |
-|-------|:----|------------------------------------------------------------|
-| host  |     | Host and port of the EVCC instance (e.g. `localhost:7070`) |
-
 ## Viessmann API `Viessmann`
 
 Collects sensor data from viessmann heatpumps
@@ -424,15 +415,24 @@ Returns the expiry date of a https certificate. Requires `openssl` binary and `p
   url: https://google.com
 ```
 
+## EVCC `Evcc`
+
+Exposes the values shown in the EVCC web-ui as metrics.
+Requires the `websocket-client` package.
+
+| Param |     | Desc                                                       |
+|-------|:----|------------------------------------------------------------|
+| host  |     | Host and port of the EVCC instance (e.g. `localhost:7070`) |
+
+
 ## PMCC source `Pmcc`
 
-Exports diagnostics metrics of the PMCC device. This allows easy detection of V2G timeouts and other
-fault conditions that prevent charging.
+Exports metrics of the "Porsche Mobile Charge Connect" device such as state of charge and charge rate.
+Requires the `websocket-client` package.
 
 ```yml
 - type: Pmcc
-  url: https://....
-  password: <customer service password>
+  host: "iccpd-..."
 ```
 
 # Writers
