@@ -37,8 +37,8 @@ class ZodiacPoolSource(Source):
         reply.deserialize(login_data)
         # Verify login
         try:
-            self.api.get_system_list_v2()
             self.api.user = reply
+            self.api.get_system_list_v2()
         except ValueError as e:
             self.log.warning(f'{e}, trying to login again')
             self._login()
