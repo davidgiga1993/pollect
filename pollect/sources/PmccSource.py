@@ -78,13 +78,15 @@ class PmccSource(Source):
                 continue
             if interface == 'de.bebro.iCAN' and path == '/':
                 # Only one of those is set per message
-                l1 = args.get('activePowerL1')
-                l2 = args.get('activePowerL2')
-                l3 = args.get('activePowerL3')
+                l1 = args.get('activePowerL1', '{}')
+                l2 = args.get('activePowerL2', '{}')
+                l3 = args.get('activePowerL3', '{}')
                 values = [l1, l2, l3]
                 for x in range(len(values)):
-                    if values[x] is not None:
-                        self._data.phasePower[x] = values[x]
+                    args = json.loads(values[x])
+                    value = args.get('value')
+                    if value is not None:
+                        self._data.phasePower[x] = value
                 continue
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
