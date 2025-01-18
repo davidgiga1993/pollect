@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pymodbus.client import ModbusTcpClient
-from pymodbus.register_read_message import ReadHoldingRegistersResponse
+from pymodbus.pdu.register_message import ReadHoldingRegistersResponse
 
 from pollect.core.Log import Log
 from pollect.libs.Units import Unit, ValueWithUnit
@@ -77,7 +77,7 @@ class SmaModbus(Log):
 
     def __init__(self, host: str, port: int = 502):
         super().__init__()
-        self._client = ModbusTcpClient(host, port)
+        self._client = ModbusTcpClient(host, port=port)
 
     def is_connected(self) -> bool:
         return self._is_connected
@@ -85,7 +85,7 @@ class SmaModbus(Log):
     def connect(self):
         self._client.connect()
         # Ask for unit ID
-        reply = self._client.read_holding_registers(42109, 4, 1)
+        reply = self._client.read_holding_registers(42109, count=4, slave=1)
         self._unit_id = reply.registers[3]
         self._is_connected = True
 
@@ -94,7 +94,7 @@ class SmaModbus(Log):
         self._is_connected = False
 
     def read(self, reg: Register) -> ValueWithUnit:
-        value = reg.decode(self._client.read_holding_registers(reg.id, reg.count, self._unit_id))
+        value = reg.decode(self._client.read_holding_registers(reg.id, count=reg.count, slave=self._unit_id))
         if value == 0xffffffff or value == 0x80000000:
             # Use 0 as a more sane "not available" value
             value = 0

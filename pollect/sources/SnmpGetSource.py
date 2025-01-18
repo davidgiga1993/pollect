@@ -263,7 +263,7 @@ class SnmpGetSource(Source):
         if self.snmp_version == 3:
             return [
                 'snmpget',
-                '-v', self.snmp_version,
+                '-v', str(self.snmp_version),
                 '-l', 'authPriv',
                 '-u', self.username,
                 '-a', self.auth_protocol,
@@ -275,7 +275,7 @@ class SnmpGetSource(Source):
 
         return [
             'snmpget',
-            '-v', self.snmp_version,
+            '-v', str(self.snmp_version),
             '-c', self.community,
             self.host
         ]

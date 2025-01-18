@@ -17,6 +17,9 @@ class Configuration:
     """
     General configuration
     """
+    WRITERS = 'writers'
+    WRITER = 'writer'
+    SOURCES = 'sources'
 
     writers: List[Writer] = None
     """
@@ -33,18 +36,18 @@ class Configuration:
         self.config = ConfigContainer(config)
         self.tick_time = self.config.get('tickTime', 10)
         self.thread_count = self.config.get('threads', 5)
-
         self.writer_factory = WriterFactory(dry_run)
 
-        writer_configs = self.config.get('writers', [])
-        writer_config = self.config.get('writer')
+    def create_global_writers(self):
+        writer_configs = self.config.get(self.WRITERS, [])
+        writer_config = self.config.get(self.WRITER)
         if writer_config is not None:
             writer_configs.append(writer_config)
-
         for config in writer_configs:
             self.writers.append(self.writer_factory.create(config))
 
     def create_executors(self) -> List[Executor]:
+        self.create_global_writers()
         executors = []
         source_factory = SourceFactory(self)
         for item in self.config.get('executors'):
@@ -54,6 +57,26 @@ class Configuration:
             executor.initialize_objects(source_factory)
             executors.append(executor)
         return executors
+
+    def get_all_sources(self) -> List[Dict[str, ConfigContainer]]:
+        """
+        Returns a list of all defined sources in all executors
+        """
+        sources = []
+        for item in self.config.get('executors'):
+            sources.extend(item.get(self.SOURCES, []))
+        return sources
+
+    def get_all_writers(self) -> List[Dict[str, ConfigContainer]]:
+        """
+        Returns a list of all defined writers in all executors
+        """
+        writers = []
+        writers.extend(self.config.get(self.WRITERS, []))
+        writers.append(self.config.get(self.WRITER))
+        for item in self.config.get('executors'):
+            writers.append(item.get(self.WRITER))
+        return [w for w in writers if w is not None]
 
 
 class Executor(Log):
@@ -88,7 +111,7 @@ class Executor(Log):
         self.writers = []
 
     def create_writers(self, writers: List[Writer], writer_factory: WriterFactory):
-        writer_config = self.config.get('writer')
+        writer_config = self.config.get(Configuration.WRITER)
         if writer_config is None and len(writers) == 0:
             raise KeyError('No global or local writer configuration not found')
         if writer_config is None:
@@ -109,7 +132,7 @@ class Executor(Log):
 
         :param factory: Factory for creating the source objects
         """
-        source_items = self.config.get('sources')
+        source_items = self.config.get(Configuration.SOURCES)
         sources = []
         for item in source_items:
             source = factory.create(item)
@@ -219,4 +242,4 @@ class Executor(Log):
             try:
                 writer.write(value_sets, source_ref)
             except Exception as e:
-                self.log.error(f'Could not write data: {e}')
+                self.log.error(f'Could not write data: {e}, source: {source_ref}')

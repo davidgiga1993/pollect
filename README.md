@@ -28,7 +28,7 @@ By default, the tick time is defined globally, but can be changed on a executor 
 
 ```bash
 pip install pollect
-pollect --config config.json [--dry-run]
+pollect --config config.yml [--dry-run]
 ```
 
 Note: You can use either `json` or `yml` files for configuration.
@@ -50,13 +50,16 @@ every 2 min and exporting it as prometheus metrics
 ---
 tickTime: 30
 threads: 4
-writer:
-  type: Prometheus
-  port: 8000
+writers:
+  - type: Prometheus
+    port: 8000
 executors:
   - collection: pollect
+    # An executor can als have its own writer
+    # writer: ...
     sources:
       - type: LoadAvg
+    
   - collection: slowerMetrics
     tickTime: 120
     sources:
@@ -110,7 +113,7 @@ Measures the http response time in milliseconds
 
 ## Disk usage `DiskUsage`
 
-Disk usage statistics. Requires `shutil` package
+Disk usage statistics.
 
 ## Load average `LoadAvg`
 
@@ -118,7 +121,7 @@ System load average. Linux only
 
 ## Memory usage `MemoryUsage`
 
-System memory usage. Requires `psutil` package
+System memory usage
 
 ## Process stats `Process`
 
@@ -133,7 +136,7 @@ Information about one or more processes
 
 ## Interface `Interface`
 
-Collects NIC statistics. Requires `psutil` package
+Collects NIC statistics.
 
 | Param        | Desc                                   |
 |--------------|----------------------------------------|
@@ -143,7 +146,7 @@ Collects NIC statistics. Requires `psutil` package
 
 ## IO `IO`
 
-Collects IO statistics. Requires `psutil` package
+Collects IO statistics.
 
 | Param   | Desc                                    |
 |---------|-----------------------------------------|
@@ -242,8 +245,7 @@ Provides simple ZFS pool sizing and performance metrics.
 
 ## Fritzbox WAN `Fritzbox`
 
-Connects to the fritzbox api and collects WAN statistics. Requires
-the [fritzconnection](https://pypi.org/project/fritzconnection) package.
+Connects to the fritzbox api and collects WAN statistics.
 
 ## Viessmann API `Viessmann`
 
@@ -259,8 +261,7 @@ to cache the oauth credentials.
 
 ## Homematic IP `HomematicIp`
 
-Collects temperature and humidity data from homematic IP. Requires
-the [homematicip](https://homematicip-rest-api.readthedocs.io/en/latest/gettingstarted.html#installation) package.
+Collects temperature and humidity data from homematic IP.
 
 | Param       | Desc            |
 |-------------|-----------------|
@@ -319,8 +320,7 @@ also work with other Zodiac devices.
 
 ## Audi MMI `MMI`
 
-Connects to the audi MMI backend and collects data. Requires the [audi api](https://github.com/davidgiga1993/AudiAPI)
-package. Note: This pacakge is currently broken due to API changes.
+Connects to the audi MMI backend and collects data. Note: This pacakge is currently broken due to API changes.
 
 | Param       | Desc                                  |
 |-------------|---------------------------------------|
@@ -329,7 +329,7 @@ package. Note: This pacakge is currently broken due to API changes.
 
 ## Google Play Developer Console `Gdc`
 
-Provides app statistics from the google play developer console. Requires the `google-cloud-storage` package.
+Provides app statistics from the google play developer console.
 
 **Important** each fetch will call the google cloud storage api to check for updates so make sure to call is less
 frequent (every 30min or so).
@@ -371,7 +371,6 @@ Collects download statistics from apple
 
 ## Http Ingress source `HttpIngress`
 
-Requires the `gevent` package
 This source starts a simple http webserver and where you can post metrics to.
 It's intended if you want to push metrics to pollect, instead of using the default pull probes.
 
@@ -418,7 +417,6 @@ Returns the expiry date of a https certificate. Requires `openssl` binary and `p
 ## EVCC `Evcc`
 
 Exposes the values shown in the EVCC web-ui as metrics.
-Requires the `websocket-client` package.
 
 | Param |     | Desc                                                       |
 |-------|:----|------------------------------------------------------------|
@@ -428,7 +426,6 @@ Requires the `websocket-client` package.
 ## PMCC source `Pmcc`
 
 Exports metrics of the "Porsche Mobile Charge Connect" device such as state of charge and charge rate.
-Requires the `websocket-client` package.
 
 ```yml
 - type: Pmcc
@@ -449,32 +446,30 @@ Exports the data via a prometheus endpoint. The port can be configured using
 `port`as configuration:
 
 ```yaml
-writer:
-  type: Prometheus
-  port: 9001
+writers:
+  - type: Prometheus
+    port: 9001
 ```
 
-### Https support
+### Https support `PrometheusSsl`
 
 Pollect has a custom prometheus exporter which supports https.
-This requires the `gevent` package.
 
 ```yaml
-writer:
-  type: PrometheusSsl
-  port: 8000
-  key: key.key
-  cert: cert.pem
+writers:
+  - type: PrometheusSsl
+    port: 8000
+    key: key.key
+    cert: cert.pem
 ```
 
-## Otel http exporter `Otel
+## Otel http exporter `Otel`
 
 Exports/Sends the data via OTLP (OpenTelemetry Protocol) over HTTP to a collector.
-Requires the `opentelemetry-sdk` and `opentelemetry-exporter-otlp` package.
 
 ```yaml
-writer:
-  type: Otel
+writers:
+  - type: Otel
 ```
 
 You can use the common otel environment variables to configure the exporter.
@@ -483,6 +478,37 @@ You can use the common otel environment variables to configure the exporter.
 export OTEL_EXPORTER_OTLP_HEADERS='Authorization=Basic xxx=='
 export OTEL_EXPORTER_OTLP_METRICS_ENDPOINT='http://localhost:4318/v1/metrics'
 ```
+
+## MQTT `Mqtt`
+
+Exports metrics to an MQTT broker:
+
+```yaml
+writers:
+  - type: Mqtt
+    host: 127.0.0.1
+    port: 1883
+    user: mqtt
+    password: password
+    # Define which metrics should be sent via mqtt
+    # If no patterns are defined, all metrics will be sent
+    includePattern:
+      - "pollect\\.esphome/temperature.+"
+      - "pollect\\.smaenergymeter/wirkleistung_.+/phase/0"
+      - "pollect\\.smapvmodbus/.+"
+```
+
+# Dependency Management
+
+By default pollect requires minimal dependencies to keep the package lightweight.
+Certain sources require additional packages to be installed to work correctly.
+
+For this pollect provides a command to print all required additional dependencies for a given configuration:
+
+```bash
+pollect --config config.yml --dependencies
+```
+This will print the dependencies in the `requirements.txt` format.
 
 # Multithreading
 
@@ -495,7 +521,7 @@ Writers which do not support partial writes will receive the data once all probe
 
 # Extensions
 
-This example shows how to add your own collectors
+This example shows how to add your own sources to pollect
 
 ## Source
 
@@ -522,19 +548,20 @@ class MultiRandomSource(Source):
         return {'a': random(), 'b': random()}
 ```
 
-config.json:
+config.yml:
 
-```json
-{
-  "sources": [
-	{
-	  "type": "extensions.SingleRandom",
-	  "max": 100
-	},
-	{
-	  "type": "extensions.MultiRandom"
-	}
-  ]
+```yaml
+tickTime: 30
+threads: 4
+writers:
+  - type: Prometheus
+    port: 8000
+executors:
+  - collection: example
+    sources:
+      - type: "extensions.SingleRandom",
+        max: 100
+      - type: "extensions.MultiRandom"
 }
 ```
 

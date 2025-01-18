@@ -53,7 +53,7 @@ cni-0b55048d-00de-1d0a-c4bd-ffd265423655 (id: 0)""".encode('utf-8')
 
         subprocess.check_output = check_output
         namespaces = ContainerNetworkUtils().get_namespace_ips()
-        self.assertEquals(1, len(namespaces))
+        self.assertEqual(1, len(namespaces))
         ips = namespaces['calico-system']
         self.assertEqual(1, len(ips))
-        self.assertEquals('172.16.95.1/32', ips.pop())
+        self.assertEqual('172.16.95.1/32', ips.pop())
