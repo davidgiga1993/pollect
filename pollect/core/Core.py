@@ -36,18 +36,18 @@ class Configuration:
         self.config = ConfigContainer(config)
         self.tick_time = self.config.get('tickTime', 10)
         self.thread_count = self.config.get('threads', 5)
-
         self.writer_factory = WriterFactory(dry_run)
 
+    def create_global_writers(self):
         writer_configs = self.config.get(self.WRITERS, [])
         writer_config = self.config.get(self.WRITER)
         if writer_config is not None:
             writer_configs.append(writer_config)
-
         for config in writer_configs:
             self.writers.append(self.writer_factory.create(config))
 
     def create_executors(self) -> List[Executor]:
+        self.create_global_writers()
         executors = []
         source_factory = SourceFactory(self)
         for item in self.config.get('executors'):
