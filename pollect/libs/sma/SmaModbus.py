@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pymodbus.client import ModbusTcpClient
-from pymodbus.register_read_message import ReadHoldingRegistersResponse
+from pymodbus.pdu.register_message import ReadHoldingRegistersResponse
 
 from pollect.core.Log import Log
 from pollect.libs.Units import Unit, ValueWithUnit
