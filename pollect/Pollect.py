@@ -2,15 +2,17 @@ import argparse
 import json
 import signal
 import sys
+from typing import Dict
 
 import yaml
 
 from pollect.core.Core import Configuration
 from pollect.core.ExecutionScheduler import ExecutionScheduler
 from pollect.core.Log import Log
+from pollect.libs.DependencyResolver import DependencyResolver
 
 
-def load_config(config: str):
+def load_config(config: str) -> Dict[str, any]:
     if config.endswith('.json'):
         with open(config, 'r') as f:
             return json.load(f)
@@ -37,6 +39,8 @@ def main():
     parser.add_argument('-c', '--config', dest='config', default='config',
                         help='Configuration file which should be read. If no file extension is given '
                              'both (yml and json) will be checked.')
+    parser.add_argument('--dependencies', dest='dependencies', action='store_true',
+                        help='Prints all required dependencies for the given configuration in a requirements.txt format')
     parser.add_argument('-r', '--dry-run', dest='dry_run', action='store_true',
                         help='Prints the probed data to stdout instead of sending it to the writer')
     args = parser.parse_args()
@@ -64,6 +68,10 @@ def main():
 
     raw_config = load_config(args.config)
     config = Configuration(raw_config, args.dry_run)
+    if args.dependencies:
+        DependencyResolver(config).print()
+        return
+
     scheduler = ExecutionScheduler(config, config.create_executors())
     scheduler.create()
     scheduler.run()
