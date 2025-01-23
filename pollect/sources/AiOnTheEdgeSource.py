@@ -10,7 +10,7 @@ class AiOnTheEdgeSource(Source):
     def __init__(self, config):
         super().__init__(config)
 
-        self._hostname = config['host']
+        self._host = config['host']
         self._port = config.get('port', 80)
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
