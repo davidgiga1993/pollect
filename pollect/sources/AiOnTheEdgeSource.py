@@ -23,5 +23,5 @@ class AiOnTheEdgeSource(Source):
         values.add(Value(data['rate'], ['rate']))
 
         has_error = data['error'] != 'no error'
-        values.add(Value(1 if has_error else 0, ['error'])
+        values.add(Value(1 if has_error else 0, ['error']))
         return values
