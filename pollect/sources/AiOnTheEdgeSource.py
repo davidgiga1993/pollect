@@ -18,12 +18,17 @@ class AiOnTheEdgeSource(Source):
         reply = requests.get(f'http://{self._host}:{self._port}/json', timeout=10)
         data = reply.json()
         data = data.get(self._value, {})
-        
+
         values = ValueSet(labels=['type'])
-        values.add(Value(data['raw'], ['raw']))
-        values.add(Value(data['value'], ['value']))
-        values.add(Value(data['rate'], ['rate']))
+        values.add(Value(self.to_float(data['raw']), ['raw']))
+        values.add(Value(self.to_float(data['value']), ['value']))
+        values.add(Value(self.to_float(data['rate']), ['rate']))
 
         has_error = data['error'] != 'no error'
         values.add(Value(1 if has_error else 0, ['error']))
         return values
+
+    def to_float(self, val: str) -> float:
+        if val == '':
+            return 0
+        return float(val)
