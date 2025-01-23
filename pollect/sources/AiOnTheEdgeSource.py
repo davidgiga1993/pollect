@@ -14,7 +14,7 @@ class AiOnTheEdgeSource(Source):
         self._port = config.get('port', 80)
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
-        reply = requests.get(f'{self._host}:{self._port}/json', timeout=10)
+        reply = requests.get(f'http://{self._host}:{self._port}/json', timeout=10)
         data = reply.json()
 
         values = ValueSet(labels=['type'])
