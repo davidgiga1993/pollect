@@ -12,11 +12,13 @@ class AiOnTheEdgeSource(Source):
 
         self._host = config['host']
         self._port = config.get('port', 80)
+        self._value = config.get('value', 'main')
 
     def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
         reply = requests.get(f'http://{self._host}:{self._port}/json', timeout=10)
         data = reply.json()
-
+        data = data.get(self._value, {})
+        
         values = ValueSet(labels=['type'])
         values.add(Value(data['raw'], ['raw']))
         values.add(Value(data['value'], ['value']))
