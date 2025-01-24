@@ -20,9 +20,9 @@ class AiOnTheEdgeSource(Source):
         data = data.get(self._value, {})
 
         values = ValueSet(labels=['type'])
-        values.add(Value(self.to_float(data['raw']), ['raw']))
         values.add(Value(self.to_float(data['value']), ['value']))
         values.add(Value(self.to_float(data['rate']), ['rate']))
+        values.add(Value(self.to_float(data['pre']), ['pre']))
 
         has_error = data['error'] != 'no error'
         values.add(Value(1 if has_error else 0, ['error']))
