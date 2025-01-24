@@ -20,7 +20,11 @@ class AiOnTheEdgeSource(Source):
         data = data.get(self._value, {})
 
         values = ValueSet(labels=['type'])
-        values.add(Value(self.to_float(data['value']), ['value']))
+        abs_value = self.to_float(data['value'])
+        if abs_value != 0:
+            # Only include value if defined, as otherwise
+            # it may indicate a counter reset to prometheus
+            values.add(Value(abs_value, ['value']))
         values.add(Value(self.to_float(data['rate']), ['rate']))
         values.add(Value(self.to_float(data['pre']), ['pre']))
 
