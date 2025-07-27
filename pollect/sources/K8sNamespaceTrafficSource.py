@@ -22,7 +22,7 @@ class K8sNamespaceTrafficSource(Source):
         super().__init__(config)
         self._namespace_label = config.get('namespaceLabel', 'namespace')
         self._traffic_log_mode = config.get('trafficLog')
-        hide_localhost_traffic = config.get('hideLocalhostTraffic', True)
+        self._hide_localhost_traffic = config.get('hideLocalhostTraffic', True)
 
         self.known_networks: List[NamedNetworks] = []
         for network in config.get('networks', []):
@@ -30,7 +30,7 @@ class K8sNamespaceTrafficSource(Source):
             self.known_networks.append(NamedNetworks(name, network['cidrs']))
 
         # Add catch-any as last item
-        self.known_networks.append(NamedNetworks('localhost', ['127.0.0.0/8'], hide=hide_localhost_traffic))
+        self.known_networks.append(NamedNetworks('localhost', ['127.0.0.0/8'], hide=self._hide_localhost_traffic))
         self.known_networks.append(NamedNetworks('other', ['0.0.0.0/0'], catch_all=True))
         self._metrics = NamespacesMetrics(self.known_networks)
 
@@ -62,6 +62,10 @@ class K8sNamespaceTrafficSource(Source):
         # Group traffic by namespaces
         for data, collected_bytes in ipv4_send_bytes.items_lookup_and_delete_batch():
             meta = to_ipv4_key(data)
+            if self._hide_localhost_traffic and meta.remoteAddr == meta.localAddr:
+                # Ignore traffic to the own machine (localhost)
+                continue
+
             namespace_metrics = self._metrics.get_namespace_metrics(meta.localAddr)
             dest_network = namespace_metrics.add_traffic(meta.remoteAddr, collected_bytes,
                                                          lambda m, data_count: m.add_transmitted(data_count))
@@ -69,6 +73,10 @@ class K8sNamespaceTrafficSource(Source):
 
         for data, collected_bytes in ipv4_recv_bytes.items_lookup_and_delete_batch():
             meta = to_ipv4_key(data)
+            if self._hide_localhost_traffic and meta.remoteAddr == meta.localAddr:
+                # Ignore traffic to the own machine (localhost)
+                continue
+
             namespace_metrics = self._metrics.get_namespace_metrics(meta.localAddr)
             dest_network = namespace_metrics.add_traffic(meta.remoteAddr, collected_bytes,
                                                          lambda m, data_count: m.add_received(data_count))
