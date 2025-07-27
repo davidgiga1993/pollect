@@ -267,7 +267,7 @@ class ViessmannOauth:
 
 
 class ViessmannApi:
-    API_URL = 'https://api.viessmann.com/iot'
+    API_URL = 'https://api.viessmann-climatesolutions.com/iot'
 
     def __init__(self, auth: ViessmannOauth):
         self._auth = auth
