@@ -1,17 +1,18 @@
 from typing import Optional
 
+from pymodbus import ModbusException
 from pymodbus.client import ModbusTcpClient
-from pymodbus.pdu.register_message import ReadHoldingRegistersResponse
+from pymodbus.pdu import ModbusPDU
 
 from pollect.core.Log import Log
 from pollect.libs.Units import Unit, ValueWithUnit
 
 
-def u32(hold: ReadHoldingRegistersResponse) -> int:
+def u32(hold: ModbusPDU) -> int:
     return hold.registers[0] << 16 | hold.registers[1]
 
 
-def u64(hold: ReadHoldingRegistersResponse) -> int:
+def u64(hold: ModbusPDU) -> int:
     return hold.registers[0] << 48 | hold.registers[1] << 32 | hold.registers[2] << 16 | hold.registers[3]
 
 
@@ -77,12 +78,14 @@ class SmaModbus(Log):
 
     def __init__(self, host: str, port: int = 502):
         super().__init__()
+        self._host = host
         self._client = ModbusTcpClient(host, port=port)
 
     def is_connected(self) -> bool:
         return self._is_connected
 
     def connect(self):
+        self.log.info(f'Connecting to SMA modbus at {self._host}')
         self._client.connect()
         # Ask for unit ID
         reply = self._client.read_holding_registers(42109, count=4, slave=1)
@@ -94,7 +97,14 @@ class SmaModbus(Log):
         self._is_connected = False
 
     def read(self, reg: Register) -> ValueWithUnit:
-        value = reg.decode(self._client.read_holding_registers(reg.id, count=reg.count, slave=self._unit_id))
+        try:
+            registers = self._client.read_holding_registers(reg.id, count=reg.count, slave=self._unit_id)
+        except ModbusException as e:
+            self._is_connected = False
+            self.log.error(f"ModbusException while retrieving register {reg.id}: {e}")
+            raise e
+
+        value = reg.decode(registers)
         if value == 0xffffffff or value == 0x80000000:
             # Use 0 as a more sane "not available" value
             value = 0
