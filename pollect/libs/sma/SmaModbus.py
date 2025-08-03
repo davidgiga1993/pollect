@@ -85,6 +85,9 @@ class SmaModbus(Log):
         return self._is_connected
 
     def connect(self):
+        # Ensure the connection is fully closed
+        self.close()
+
         self.log.info(f'Connecting to SMA modbus at {self._host}')
         self._client.connect()
         # Ask for unit ID
