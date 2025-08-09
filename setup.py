@@ -37,6 +37,7 @@ setuptools.setup(
         'prometheus-client',
         'PyYAML',
         'requests',
+        'pysnmp'
     ],
     entry_points={
         'console_scripts': ['pollect=pollect.Pollect:main'],

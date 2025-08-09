@@ -1,6 +1,6 @@
-import re
-import subprocess
-import time
+from pysnmp.hlapi import (SnmpEngine, UsmUserData, UdpTransportTarget, ContextData, ObjectType, ObjectIdentity, CommunityData, nextCmd)
+from pysnmp.hlapi.auth import (usmHMACMD5AuthProtocol, usmHMACSHAAuthProtocol, usmHMAC128SHA224AuthProtocol, usmHMAC192SHA256AuthProtocol, usmHMAC256SHA384AuthProtocol, usmHMAC384SHA512AuthProtocol)
+from pysnmp.hlapi.priv import (usmDESPrivProtocol, usm3DESEDEPrivProtocol, usmAesCfb128Protocol, usmAesCfb192Protocol, usmAesBlumenthalCfb256Protocol)
 from typing import Dict, List, Optional
 
 from pollect.core.Log import Log
@@ -24,8 +24,6 @@ class SnmpValue:
         delta = self.value - old_value
         if self.val_type == self.COUNTER32:
             if delta < 0:
-                # Value did overflow - get the delta between the overflow and the last number
-                # and add the new value and +1 since there is one increment from max val to 0
                 return (4294967295 - old_value) + self.value + 1
         return delta
 
@@ -40,14 +38,7 @@ class ResolvedOid:
     def __init__(self, oid: str):
         self.oid = oid
         self.label_oids = []  # type: List[str]
-        """
-        OIDs of the dynamic labels
-        """
-
         self.static_labels = []  # type: List[str]
-        """
-        Values of static labels
-        """
 
 
 class MetricDefinition(Log):
@@ -80,8 +71,6 @@ class MetricDefinition(Log):
             end = range_data['to']
             label_name = range_data['label']
             self.label_names.append(label_name)
-
-            # We replace the "label_name" in the oid
             oid = data.get('oid', ignore_missing_env=label_name, required=True)
         else:
             oid = data['oid']
@@ -92,14 +81,9 @@ class MetricDefinition(Log):
             label_oid = oid_labels_data.get(label_key, ignore_missing_env=label_name, required=True)
             oid_labels.append(OidLabel(label_key, label_oid))
             self.label_names.append(label_key)
-
         self.oids = self._resolve_oids(oid, start, end, label_name, oid_labels)
 
     def get_oids(self) -> List[str]:
-        """
-        Returns all OIDs which should be probed
-        :return: OIDs
-        """
         oids = []
         for resolved in self.oids:
             oids.append(resolved.oid)
@@ -113,7 +97,6 @@ class MetricDefinition(Log):
             if snmp_value is None:
                 self.log.error(f'OID {resolved.oid} not found')
                 continue
-
             value = self._to_value(snmp_value, resolved.oid)
             if value is None:
                 return data
@@ -134,14 +117,9 @@ class MetricDefinition(Log):
         if last_probe is None:
             self._last_probe[oid] = ProbeValue(time.time(), smnp_value)
             return None
-
-        # > 1st run - create a rate value for each value and sum them afterwards
-        # This is required to handle the overflow of each value correctly
         time_delta = time.time() - last_probe.time
         delta_value = smnp_value.get_delta(last_probe.data.value)
         pollect_value = Value(delta_value / time_delta, name=self.name)
-
-        # Refresh the data
         last_probe.time = time.time()
         last_probe.data = smnp_value
         return pollect_value
@@ -162,7 +140,6 @@ class MetricDefinition(Log):
             resolved = ResolvedOid(oid)
             resolved.label_oids = [x.oid for x in oid_labels]
             return [resolved]
-
         oids = []
         for x in range(start, end + 1):
             param_str = '${' + label_name + '}'
@@ -175,10 +152,6 @@ class MetricDefinition(Log):
 
     @staticmethod
     def _get_label_values(resolved: ResolvedOid, snmp_values: Dict[str, SnmpValue]) -> List[str]:
-        """
-        Returns the values of the dynamic oid labels
-        :return: Label values
-        """
         labels = []
         labels.extend(resolved.static_labels)
         for label_oid in resolved.label_oids:
@@ -192,7 +165,7 @@ class MetricDefinition(Log):
 
 class SnmpGetSource(Source):
     """
-    Wrapper for snmpget
+    Using pysnmp to probe SNMP values
     """
 
     def __init__(self, config: ConfigContainer):
@@ -202,13 +175,11 @@ class SnmpGetSource(Source):
         self.oids: List[str] = []
         for metric_def in self.metric_defs:
             self.oids.extend(metric_def.get_oids())
-
         self.snmp_version = config.get('snmpVersion', 1)
         if self.snmp_version == 3:
             self.username = config.get('username', required=True)
             self.auth_key = config.get('authPassPhrase', required=True)
             self.auth_protocol = config.get('authProtocol', 'SHA')
-
             self.priv_key = config.get('privacyPassPhrase', required=True)
             self.priv_protocol = config.get('privacyProtocol', 'AES')
         else:
@@ -216,7 +187,6 @@ class SnmpGetSource(Source):
 
     def _probe(self) -> List[ValueSet]:
         snmp_values = self._get_values(self.oids)
-
         value_sets = []
         for metric_def in self.metric_defs:
             data = metric_def.probe(snmp_values)
@@ -224,58 +194,69 @@ class SnmpGetSource(Source):
         return value_sets
 
     def _get_values(self, oids: List[str]) -> Dict[str, SnmpValue]:
-        """
-        Probes a list of oids
-
-        :param oids: List of oids which should be probed
-        :return: Values
-        """
         if len(oids) > 128:
-            # Only 128 allowed per request
             values = {}
             for chunk in chunks(oids, 128):
                 values.update(self._get_values(chunk))
             return values
 
-        args = self._build_args()
-        args.extend(oids)
-        lines = subprocess.check_output(args).decode('utf-8').splitlines()
-
         values = {}
-        for line in lines:
-            # Sample lines:
-            # iso.3.6.1.2.1.16.1.1.1.1.47 = INTEGER: 47
-            # iso.3.6.1.2.1.16.1.1.1.4.43 = Counter32: 27909381
-            # iso.3.6.1.2.1.16.1.1.1.4.43 = STRING: "sample value"
-            match = re.match(r'(.+)\s+=\s*(.+?):\s*(.+)', line)
-            if not match:
-                continue
-            oid = match.group(1)
-            val_type = match.group(2).lower()
-            if val_type == 'string':
-                value = match.group(3)[1:-1]  # Remove "" wrapping
+        iterator = self._build_iterator(oids)
+        for error_indication, error_status, error_index, var_binds in iterator:
+            if error_indication:
+                raise ValueError(error_indication)
+            elif error_status:
+                raise ValueError('%s at %s' % (error_status.prettyPrint(), error_index and var_binds[int(error_index) - 1][0] or '?'))
             else:
-                value = float(match.group(3))
-            values[oid] = SnmpValue(val_type, value)
+                for var_bind in var_binds:
+                    oid, value = var_bind
+                    val_type = type(value).__name__.lower()
+                    if val_type == 'octetstring':
+                        value = value.prettyPrint()
+                    else:
+                        value = float(value.prettyPrint())
+                    values[str(oid)] = SnmpValue(val_type, value)
         return values
 
-    def _build_args(self) -> List[str]:
+    def _build_iterator(self, oids: List[str]):
         if self.snmp_version == 3:
-            return [
-                'snmpget',
-                '-v', str(self.snmp_version),
-                '-l', 'authPriv',
-                '-u', self.username,
-                '-a', self.auth_protocol,
-                '-A', self.auth_key,
-                '-x', self.priv_protocol,
-                '-X', self.priv_key,
-                self.host
-            ]
+            return nextCmd(SnmpEngine(),
+                           UsmUserData(self.username,
+                                       self.auth_key,
+                                       self.priv_key,
+                                       authProtocol=self._get_auth_protocol(self.auth_protocol),
+                                       privProtocol=self._get_priv_protocol(self.priv_protocol)),
+                           UdpTransportTarget((self.host, 161)),
+                           ContextData(),
+                           *[ObjectType(ObjectIdentity(oid)) for oid in oids],
+                           lexicographicMode=False)
 
-        return [
-            'snmpget',
-            '-v', str(self.snmp_version),
-            '-c', self.community,
-            self.host
-        ]
+        return nextCmd(SnmpEngine(),
+                       CommunityData(self.community, mpModel=0 if self.snmp_version == 1 else 1),
+                       UdpTransportTarget((self.host, 161)),
+                       ContextData(),
+                       *[ObjectType(ObjectIdentity(oid)) for oid in oids],
+                       lexicographicMode=False)
+
+    @staticmethod
+    def _get_auth_protocol(protocol: str):
+        protocols = {
+            'MD5': usmHMACMD5AuthProtocol,
+            'SHA': usmHMACSHAAuthProtocol,
+            'SHA224': usmHMAC128SHA224AuthProtocol,
+            'SHA256': usmHMAC192SHA256AuthProtocol,
+            'SHA384': usmHMAC256SHA384AuthProtocol,
+            'SHA512': usmHMAC384SHA512AuthProtocol,
+        }
+        return protocols.get(protocol.upper(), usmHMACSHAAuthProtocol)
+
+    @staticmethod
+    def _get_priv_protocol(protocol: str):
+        protocols = {
+            'DES': usmDESPrivProtocol,
+            '3DES': usm3DESEDEPrivProtocol,
+            'AES': usmAesCfb128Protocol,
+            'AES192': usmAesCfb192Protocol,
+            'AES256': usmAesBlumenthalCfb256Protocol,
+        }
+        return protocols.get(protocol.upper(), usmAesCfb128Protocol)
