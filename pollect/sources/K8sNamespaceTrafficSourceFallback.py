@@ -11,7 +11,7 @@ from pollect.sources.Source import Source
 from pollect.sources.helper.NetworkStats import NamedNetworks, ContainerNetworkUtils, NetworkMetrics
 
 
-class K8sNamespaceTrafficSourceFallback(Source):
+class K8sNamespaceTrafficFallbackSource(Source):
     """
     Fallback implementation for K8sNamespaceTrafficSource that works without BPF.
     Uses /proc/net/dev and container network namespaces for monitoring.
