@@ -27,6 +27,7 @@ class K8sNamespaceTrafficFallbackSource(Source):
         super().__init__(config)
         self._namespace_label = config.get('namespaceLabel', 'namespace')
         self._traffic_log_mode = config.get('trafficLog')
+        self._debug_namespace_detection = config.get('debugNamespaceDetection', True)
         hide_localhost_traffic = config.get('hideLocalhostTraffic', True)
 
         self.known_networks: List[NamedNetworks] = []
@@ -41,6 +42,7 @@ class K8sNamespaceTrafficFallbackSource(Source):
         self._metrics = NamespacesMetrics(self.known_networks)
         self._previous_connections: Dict[str, int] = {}
         self._runtime_type = None
+        self._namespace_ips: Dict[str, set] = {}
 
     def setup_source(self, global_conf):
         """Setup enhanced monitoring - no BPF compilation needed"""
@@ -52,6 +54,13 @@ class K8sNamespaceTrafficFallbackSource(Source):
         
         if self._runtime_type == "none":
             self.log.warning("No container runtime detected - namespace separation may be limited")
+        
+        # Test namespace detection immediately
+        test_namespaces = self._get_enhanced_namespace_ips()
+        if test_namespaces:
+            self.log.info(f"Successfully detected {len(test_namespaces)} K8s namespaces: {list(test_namespaces.keys())}")
+        else:
+            self.log.error(f"Failed to detect any K8s namespaces using {self._runtime_type} - you will see generic network names instead")
         
         # Test access to required files
         required_files = ['/proc/net/tcp', '/proc/net/tcp6']
@@ -117,9 +126,11 @@ class K8sNamespaceTrafficFallbackSource(Source):
         """Get namespace IPs using containerd (ctr command)"""
         try:
             # Use the existing ContainerNetworkUtils but with error handling
-            return ContainerNetworkUtils.get_namespace_ips()
+            result = ContainerNetworkUtils.get_namespace_ips()
+            self.log.debug(f"containerd: got {len(result)} namespaces")
+            return result
         except Exception as e:
-            self.log.debug(f"containerd method failed: {e}")
+            self.log.warning(f"containerd method failed: {e}")
             return {}
 
     def _get_namespace_ips_crictl(self) -> Dict[str, set]:
@@ -163,10 +174,11 @@ class K8sNamespaceTrafficFallbackSource(Source):
                     self.log.debug(f"Error processing container {container_id}: {e}")
                     continue
             
+            self.log.debug(f"crictl: processed {len(container_ids)} containers, got {len(namespace_ips)} namespaces")
             return namespace_ips
             
         except Exception as e:
-            self.log.debug(f"crictl method failed: {e}")
+            self.log.warning(f"crictl method failed: {e}")
             return {}
 
     def _get_namespace_ips_kubectl(self) -> Dict[str, set]:
@@ -179,22 +191,26 @@ class K8sNamespaceTrafficFallbackSource(Source):
                                    'jsonpath={range .items[*]}{.metadata.namespace}{" "}{.status.podIP}{"\n"}{end}'], 
                                   capture_output=True, text=True, timeout=10)
             if result.returncode != 0:
+                self.log.warning(f"kubectl get pods failed: {result.stderr}")
                 return {}
             
+            lines_processed = 0
             for line in result.stdout.strip().split('\n'):
                 if line.strip():
                     parts = line.strip().split()
                     if len(parts) >= 2:
                         namespace, ip = parts[0], parts[1]
-                        if namespace and ip and ip != '<none>':
+                        if namespace and ip and ip != '<none>' and ip != 'None':
                             if namespace not in namespace_ips:
                                 namespace_ips[namespace] = set()
                             namespace_ips[namespace].add(f"{ip}/32")
+                            lines_processed += 1
             
+            self.log.debug(f"kubectl: processed {lines_processed} pod IPs across {len(namespace_ips)} namespaces")
             return namespace_ips
             
         except Exception as e:
-            self.log.debug(f"kubectl method failed: {e}")
+            self.log.warning(f"kubectl method failed: {e}")
             return {}
 
     def _read_tcp_connections(self) -> List[Dict]:
@@ -319,8 +335,8 @@ class K8sNamespaceTrafficFallbackSource(Source):
     def _probe(self) -> Optional[ValueSet]:
         """Probe network statistics using fallback approach"""
         
-        # Update namespace mappings
-        self._metrics.update_networks_enhanced()
+        # Update namespace mappings using our enhanced detection
+        self._update_namespace_mappings()
         
         # Get current TCP connections
         connections = self._read_tcp_connections()
@@ -340,8 +356,8 @@ class K8sNamespaceTrafficFallbackSource(Source):
                 local_addr_int = int(ipaddress.IPv4Address(local_addr_str))
                 remote_addr_int = int(ipaddress.IPv4Address(remote_addr_str))
                 
-                # Get namespace for this connection
-                namespace_metrics = self._metrics.get_namespace_metrics(local_addr_int)
+                # Get namespace for this connection using enhanced detection
+                namespace_name = self._get_namespace_for_address(local_addr_int)
                 
                 # Classify remote network
                 dest_network = None
@@ -350,12 +366,12 @@ class K8sNamespaceTrafficFallbackSource(Source):
                         dest_network = network
                         break
                 
-                if dest_network and namespace_metrics:
-                    key = f"{namespace_metrics.namespace}:{dest_network.name}"
+                if dest_network and namespace_name:
+                    key = f"{namespace_name}:{dest_network.name}"
                     if key not in connection_stats:
                         connection_stats[key] = {
                             'connections': 0, 
-                            'namespace': namespace_metrics.namespace, 
+                            'namespace': namespace_name, 
                             'network': dest_network,
                             'tx_queue_total': 0,
                             'rx_queue_total': 0
@@ -405,6 +421,58 @@ class K8sNamespaceTrafficFallbackSource(Source):
                 values.add(Value(label_values=[namespace, network.name, 'received'], value=stats['estimated_rx_bytes']))
         
         return values
+
+    def _update_namespace_mappings(self):
+        """Update namespace IP mappings using our enhanced detection"""
+        self._namespace_ips = self._get_enhanced_namespace_ips()
+        
+        # Log what we detected for debugging
+        if self._namespace_ips:
+            self.log.debug(f"Detected {len(self._namespace_ips)} namespaces: {list(self._namespace_ips.keys())}")
+            for namespace, ips in self._namespace_ips.items():
+                self.log.debug(f"  {namespace}: {len(ips)} IPs")
+        else:
+            self.log.warning(f"No namespace IPs detected using runtime {self._runtime_type}")
+        
+        # Also update the metrics system with actual namespace info
+        self._metrics._container_networks = []
+        for namespace, ips in self._namespace_ips.items():
+            self._metrics._container_networks.append(NamedNetworks(namespace, list(ips)))
+
+    def _get_namespace_for_address(self, local_address: int) -> str:
+        """Get the actual Kubernetes namespace name for a local address"""
+        
+        # Convert address to string for logging
+        addr_str = str(ipaddress.IPv4Address(local_address))
+        
+        # First try to match against detected namespace IPs
+        for namespace, ips in self._namespace_ips.items():
+            for ip_cidr in ips:
+                try:
+                    # Remove /32 suffix if present
+                    ip_str = ip_cidr.split('/')[0]
+                    ip_int = int(ipaddress.IPv4Address(ip_str))
+                    if ip_int == local_address:
+                        self.log.debug(f"Address {addr_str} matched namespace {namespace}")
+                        return namespace
+                except:
+                    continue
+        
+        # If no namespace match found, check if we have any namespace data at all
+        if not self._namespace_ips:
+            self.log.warning(f"No namespace IPs available for address {addr_str} - runtime detection may have failed")
+            return 'no-namespace-data'
+        
+        # If we have namespace data but no match, this might be a host network pod
+        # Don't fall back to network classification - return unknown
+        self.log.debug(f"Address {addr_str} not found in any of {len(self._namespace_ips)} detected namespaces")
+        
+        # Log the first few IPs from each namespace for debugging
+        for ns, ips in list(self._namespace_ips.items())[:3]:
+            sample_ips = list(ips)[:2]
+            self.log.debug(f"  Namespace {ns} has IPs: {sample_ips}")
+        
+        return 'host-network'
 
     def _read_interface_statistics(self) -> Dict[str, Dict[str, int]]:
         """Read network interface statistics from /proc/net/dev"""
@@ -485,16 +553,23 @@ class NamespacesMetrics:
 
     def update_networks_enhanced(self):
         """Update networks using fallback source's namespace detection"""
-        # This would be called by the fallback source with its own namespace detection
-        # For now, fall back to original method but with error handling
+        # Use the enhanced source's own namespace detection methods
         try:
-            namespaces = ContainerNetworkUtils.get_namespace_ips()
+            # Get the parent source instance to access its runtime detection
+            if hasattr(self, '_parent_source'):
+                namespace_ips = self._parent_source._get_enhanced_namespace_ips()
+            else:
+                # This is a fallback - we need access to the source instance
+                # For now, return empty to use known network classification
+                namespace_ips = {}
+            
             networks = []
-            for namespace, ips in namespaces.items():
+            for namespace, ips in namespace_ips.items():
                 networks.append(NamedNetworks(namespace, list(ips)))
             self._container_networks = networks
         except Exception:
-            # If container detection fails, continue with empty list
+            # If enhanced detection fails, continue with empty list
+            # This will fall back to known network classification
             self._container_networks = []
 
     def _get_container_network(self, local_address: int) -> Optional[NamedNetworks]:
