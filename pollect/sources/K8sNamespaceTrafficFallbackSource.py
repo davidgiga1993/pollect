@@ -213,49 +213,7 @@ class K8sNamespaceTrafficFallbackSource(Source):
             self.log.warning(f"kubectl method failed: {e}")
             return {}
 
-    def _read_namespace_connections(self) -> List[Dict]:
-        """Read network connections from individual namespace network interfaces"""
-        all_connections = []
-        
-        # Since we're running in host network namespace with nsenter,
-        # we need to look at per-namespace network statistics differently
-        
-        # First, try to get connections from container processes
-        for namespace, ips in self._namespace_ips.items():
-            namespace_connections = self._get_namespace_network_stats(namespace, ips)
-            all_connections.extend(namespace_connections)
-        
-        # Also read host connections for comparison
-        host_connections = self._read_host_tcp_connections()
-        
-        if self._debug_namespace_detection:
-            self.log.info(f"Found {len(all_connections)} namespace connections and {len(host_connections)} host connections")
-        
-        # For now, let's focus on interface-based statistics rather than connection parsing
-        # since nsenter makes connection parsing less reliable
-        return all_connections
 
-    def _get_namespace_network_stats(self, namespace: str, ips: set) -> List[Dict]:
-        """Get network statistics for a specific namespace using interface stats"""
-        connections = []
-        
-        try:
-            # Get containers in this namespace
-            containers = self._get_containers_in_namespace(namespace)
-            
-            for container_info in containers:
-                # Try to get network interface statistics for this container
-                net_stats = self._get_container_network_stats(container_info)
-                if net_stats:
-                    # Convert interface stats to connection-like objects for processing
-                    for ip in ips:
-                        ip_addr = ip.split('/')[0]
-                        connections.extend(self._convert_stats_to_connections(namespace, ip_addr, net_stats))
-        
-        except Exception as e:
-            self.log.debug(f"Error getting namespace {namespace} network stats: {e}")
-        
-        return connections
 
     def _get_containers_in_namespace(self, namespace: str) -> List[Dict]:
         """Get container information for a specific namespace"""
@@ -291,83 +249,7 @@ class K8sNamespaceTrafficFallbackSource(Source):
         
         return containers
 
-    def _get_container_network_stats(self, container_info: Dict) -> Dict:
-        """Get network statistics for a specific container"""
-        try:
-            # Try to get the container's PID to access its network namespace
-            container_id = container_info['id']
-            
-            if self._runtime_type == "containerd":
-                # Get container task info to find PID
-                result = subprocess.run(['ctr', '-n', 'k8s.io', 'tasks', 'list'], 
-                                      capture_output=True, text=True, timeout=3)
-                if result.returncode == 0:
-                    for line in result.stdout.strip().split('\n')[1:]:  # Skip header
-                        parts = line.split()
-                        if len(parts) >= 2 and parts[0] == container_id:
-                            pid = parts[1]
-                            # Get network stats from this container's network namespace
-                            return self._read_container_proc_net(pid)
-            
-        except Exception as e:
-            self.log.debug(f"Error getting container network stats: {e}")
-        
-        return {}
 
-    def _read_container_proc_net(self, pid: str) -> Dict:
-        """Read network statistics from a container's /proc/PID/net/dev"""
-        stats = {}
-        
-        try:
-            proc_net_dev = f"/proc/{pid}/net/dev"
-            if os.path.exists(proc_net_dev):
-                with open(proc_net_dev, 'r') as f:
-                    lines = f.readlines()[2:]  # Skip header
-                    
-                    for line in lines:
-                        if ':' in line:
-                            iface_part, stats_part = line.split(':', 1)
-                            iface = iface_part.strip()
-                            stat_values = stats_part.strip().split()
-                            
-                            if len(stat_values) >= 16 and iface != 'lo':
-                                stats[iface] = {
-                                    'rx_bytes': int(stat_values[0]),
-                                    'rx_packets': int(stat_values[1]),
-                                    'tx_bytes': int(stat_values[8]),
-                                    'tx_packets': int(stat_values[9])
-                                }
-        
-        except Exception as e:
-            self.log.debug(f"Error reading container proc net for PID {pid}: {e}")
-        
-        return stats
-
-    def _convert_stats_to_connections(self, namespace: str, ip_addr: str, net_stats: Dict) -> List[Dict]:
-        """Convert interface statistics to connection-like objects for processing"""
-        connections = []
-        
-        # Create synthetic connections based on interface activity
-        total_rx_bytes = sum(stats.get('rx_bytes', 0) for stats in net_stats.values())
-        total_tx_bytes = sum(stats.get('tx_bytes', 0) for stats in net_stats.values())
-        total_packets = sum(stats.get('rx_packets', 0) + stats.get('tx_packets', 0) for stats in net_stats.values())
-        
-        if total_packets > 0:  # Only create connection if there's activity
-            # Create a synthetic connection representing this namespace's activity
-            connections.append({
-                'local_addr': ip_addr,
-                'local_port': 0,  # Synthetic
-                'remote_addr': '0.0.0.0',  # Will be classified by network rules
-                'remote_port': 0,  # Synthetic
-                'namespace': namespace,
-                'rx_bytes': total_rx_bytes,
-                'tx_bytes': total_tx_bytes,
-                'packets': total_packets,
-                'protocol': 'interface_stats',
-                'synthetic': True
-            })
-        
-        return connections
 
     def _read_host_tcp_connections(self) -> List[Dict]:
         """Read TCP connections from host namespace (for comparison)"""
@@ -569,37 +451,40 @@ class K8sNamespaceTrafficFallbackSource(Source):
         # Use the same NamespacesMetrics logic as the original source
         # Process connections exactly like eBPF data
         for conn in connections:
-            if conn.get('synthetic', False):
-                # Skip synthetic interface stats - they don't have real destinations
-                continue
+            try:
+                local_addr_int = int(ipaddress.IPv4Address(conn['local_addr']))
+                remote_addr_int = int(ipaddress.IPv4Address(conn['remote_addr']))
                 
-            local_addr_int = int(ipaddress.IPv4Address(conn['local_addr']))
-            remote_addr_int = int(ipaddress.IPv4Address(conn['remote_addr']))
-            
-            # Get namespace metrics for this local address (same as original)
-            namespace_metrics = self._metrics.get_namespace_metrics(local_addr_int)
-            
-            # Classify traffic by actual destination (same as original) 
-            dest_network = None
-            for network in self.known_networks:
-                if network.contains(remote_addr_int):
-                    dest_network = network
-                    break
-            
-            if dest_network:
-                # Use queue sizes as proxy for bytes (best we can do without eBPF)
-                estimated_bytes = conn.get('tx_queue', 0) + conn.get('rx_queue', 0)
-                if estimated_bytes > 0:
-                    # Add traffic to the specific destination network only
-                    if dest_network not in namespace_metrics.metrics:
-                        namespace_metrics.metrics[dest_network] = NetworkMetrics()
-                    
-                    # Split queue data into send/receive (rough estimate)
+                # Get namespace metrics for this local address (same as original)
+                namespace_metrics = self._metrics.get_namespace_metrics(local_addr_int)
+                
+                # Classify traffic by actual destination (same as original) 
+                dest_network = None
+                for network in self.known_networks:
+                    if network.contains(remote_addr_int):
+                        dest_network = network
+                        break
+                
+                if dest_network:
+                    # Use queue sizes as proxy for bytes (best we can do without eBPF)
                     tx_bytes = conn.get('tx_queue', 0)
                     rx_bytes = conn.get('rx_queue', 0)
                     
-                    namespace_metrics.metrics[dest_network].add_transmitted(tx_bytes)
-                    namespace_metrics.metrics[dest_network].add_received(rx_bytes)
+                    # Only process connections with some data
+                    if tx_bytes > 0 or rx_bytes > 0:
+                        # Add traffic to the specific destination network only
+                        if dest_network not in namespace_metrics.metrics:
+                            namespace_metrics.metrics[dest_network] = NetworkMetrics()
+                        
+                        namespace_metrics.metrics[dest_network].add_transmitted(tx_bytes)
+                        namespace_metrics.metrics[dest_network].add_received(rx_bytes)
+                        
+                        if self._debug_namespace_detection:
+                            self.log.debug(f"Added traffic: {namespace_metrics.namespace} -> {dest_network.name}, tx={tx_bytes}, rx={rx_bytes}")
+            
+            except Exception as e:
+                self.log.debug(f"Error processing connection: {e}")
+                continue
         
         # Export metrics using the exact same logic as original source
         values = ValueSet(labels=[self._namespace_label, 'dest_network', 'direction'])
@@ -620,11 +505,11 @@ class K8sNamespaceTrafficFallbackSource(Source):
         """Read TCP connections from all accessible namespaces"""
         all_connections = []
         
-        # Try to read from host namespace first
+        # Read from host namespace first
         host_connections = self._read_host_tcp_connections()
         all_connections.extend(host_connections)
         
-        # Try to read from container namespaces if accessible
+        # Read from individual container namespaces
         for namespace, ips in self._namespace_ips.items():
             try:
                 containers = self._get_containers_in_namespace(namespace)
@@ -634,7 +519,26 @@ class K8sNamespaceTrafficFallbackSource(Source):
             except Exception as e:
                 self.log.debug(f"Could not read connections from namespace {namespace}: {e}")
         
-        return all_connections
+        # Remove duplicates and filter for meaningful connections
+        unique_connections = []
+        seen_connections = set()
+        
+        for conn in all_connections:
+            # Create a unique key for this connection
+            conn_key = f"{conn['local_addr']}:{conn['local_port']}->{conn['remote_addr']}:{conn['remote_port']}"
+            if conn_key not in seen_connections:
+                seen_connections.add(conn_key)
+                # Only include connections with meaningful destinations (not 0.0.0.0)
+                if conn['remote_addr'] != '0.0.0.0':
+                    unique_connections.append(conn)
+        
+        if self._debug_namespace_detection:
+            self.log.info(f"Found {len(unique_connections)} unique TCP connections from {len(all_connections)} total")
+            # Show sample connections with destinations
+            for i, conn in enumerate(unique_connections[:5]):
+                self.log.info(f"  Connection {i+1}: {conn['local_addr']}:{conn['local_port']} -> {conn['remote_addr']}:{conn['remote_port']}")
+        
+        return unique_connections
 
     def _read_container_tcp_connections(self, container_info: Dict) -> List[Dict]:
         """Read TCP connections from a specific container's network namespace"""
