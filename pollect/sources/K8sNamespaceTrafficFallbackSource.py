@@ -16,9 +16,16 @@ class K8sNamespaceTrafficFallbackSource(Source):
     """
     Fallback K8sNamespaceTrafficSource that works without BPF compilation.
     
+    IMPORTANT LIMITATION: This fallback cannot provide accurate byte counts
+    like the original eBPF source. Instead, it provides estimated traffic 
+    volumes based on connection patterns and port-based heuristics.
+    
     This version uses /proc/net/tcp* for connection monitoring combined with
     container runtime information for namespace mapping. It provides true
-    namespace-separated traffic monitoring without requiring BPF.
+    namespace-separated connection monitoring and estimated traffic volumes.
+    
+    Use this when eBPF is not available, but be aware that traffic volumes
+    are estimates, not actual measured bytes.
     
     Works with both containerd (via ctr) and CRI-O (via crictl).
     """
@@ -47,6 +54,7 @@ class K8sNamespaceTrafficFallbackSource(Source):
     def setup_source(self, global_conf):
         """Setup enhanced monitoring - no BPF compilation needed"""
         self.log.info("Using fallback network monitoring (no BPF required)")
+        self.log.warning("FALLBACK MODE: Traffic volumes are estimates based on connection patterns, not actual measured bytes")
         
         # Detect container runtime
         self._runtime_type = self._detect_container_runtime()
@@ -437,28 +445,27 @@ class K8sNamespaceTrafficFallbackSource(Source):
         return str(ipaddress.IPv4Address(ip_bytes))
 
     def _probe(self) -> Optional[ValueSet]:
-        """Probe network statistics using connection-based approach like original source"""
+        """Probe network statistics using connection-based approach with estimated traffic"""
         
-        # Update namespace mappings (same as original)
+        # Update namespace mappings
         self._update_namespace_mappings()
         
-        # Read actual TCP connections with real destinations (replaces eBPF)
+        # Read actual TCP connections with real destinations
         connections = self._read_all_tcp_connections()
         
         if self._debug_namespace_detection:
             self.log.info(f"Found {len(connections)} total connections")
         
-        # Use the same NamespacesMetrics logic as the original source
-        # Process connections exactly like eBPF data
+        # Process connections and estimate traffic based on connection patterns
         for conn in connections:
             try:
                 local_addr_int = int(ipaddress.IPv4Address(conn['local_addr']))
                 remote_addr_int = int(ipaddress.IPv4Address(conn['remote_addr']))
                 
-                # Get namespace metrics for this local address (same as original)
+                # Get namespace metrics for this local address
                 namespace_metrics = self._metrics.get_namespace_metrics(local_addr_int)
                 
-                # Classify traffic by actual destination (same as original) 
+                # Classify traffic by actual destination 
                 dest_network = None
                 for network in self.known_networks:
                     if network.contains(remote_addr_int):
@@ -466,27 +473,29 @@ class K8sNamespaceTrafficFallbackSource(Source):
                         break
                 
                 if dest_network:
-                    # Use queue sizes as proxy for bytes (best we can do without eBPF)
-                    tx_bytes = conn.get('tx_queue', 0)
-                    rx_bytes = conn.get('rx_queue', 0)
+                    # Estimate traffic per connection based on connection type and ports
+                    estimated_bytes = self._estimate_connection_traffic(conn)
                     
-                    # Only process connections with some data
-                    if tx_bytes > 0 or rx_bytes > 0:
-                        # Add traffic to the specific destination network only
-                        if dest_network not in namespace_metrics.metrics:
-                            namespace_metrics.metrics[dest_network] = NetworkMetrics()
-                        
-                        namespace_metrics.metrics[dest_network].add_transmitted(tx_bytes)
-                        namespace_metrics.metrics[dest_network].add_received(rx_bytes)
-                        
-                        if self._debug_namespace_detection:
-                            self.log.debug(f"Added traffic: {namespace_metrics.namespace} -> {dest_network.name}, tx={tx_bytes}, rx={rx_bytes}")
+                    # Add traffic to the specific destination network only
+                    if dest_network not in namespace_metrics.metrics:
+                        namespace_metrics.metrics[dest_network] = NetworkMetrics()
+                    
+                    namespace_metrics.metrics[dest_network].add_transmitted(estimated_bytes['tx'])
+                    namespace_metrics.metrics[dest_network].add_received(estimated_bytes['rx'])
+                    
+                    if self._debug_namespace_detection:
+                        self.log.info(f"Connection traffic estimate: {namespace_metrics.namespace} -> {dest_network.name}, "
+                                    f"tx={estimated_bytes['tx']}, rx={estimated_bytes['rx']}, "
+                                    f"from {conn['local_addr']}:{conn['local_port']} to {conn['remote_addr']}:{conn['remote_port']}")
+                else:
+                    if self._debug_namespace_detection:
+                        self.log.info(f"No network match for destination {conn['remote_addr']} from {conn['local_addr']}")
             
             except Exception as e:
                 self.log.debug(f"Error processing connection: {e}")
                 continue
         
-        # Export metrics using the exact same logic as original source
+        # Export metrics using the same logic as original source
         values = ValueSet(labels=[self._namespace_label, 'dest_network', 'direction'])
         for value in self._metrics.metrics.values():
             namespace = value.namespace
@@ -500,6 +509,79 @@ class K8sNamespaceTrafficFallbackSource(Source):
                 values.add(Value(label_values=[namespace, net_name, 'sent'], value=metrics.transmitted_bytes))
         
         return values
+
+    def _estimate_connection_traffic(self, conn: Dict) -> Dict[str, int]:
+        """Estimate traffic for a connection based on connection characteristics"""
+        
+        # Start with queue sizes if available (these are real buffered bytes)
+        base_tx = max(conn.get('tx_queue', 0), 0)
+        base_rx = max(conn.get('rx_queue', 0), 0)
+        
+        # Estimate additional traffic based on port and connection type
+        local_port = conn['local_port']
+        remote_port = conn['remote_port']
+        
+        # Common service port patterns and their typical traffic volumes
+        # These are rough estimates based on typical service behavior
+        
+        # Web traffic (HTTP/HTTPS)
+        if remote_port in [80, 443, 8080, 8443, 9090]:
+            # Web requests: typically 1-10KB request, 10-100KB response
+            estimated_tx = max(base_tx, 5000)   # ~5KB request
+            estimated_rx = max(base_rx, 50000)  # ~50KB response
+        
+        # Database traffic
+        elif remote_port in [3306, 5432, 6379, 27017, 1433, 5984]:
+            # Database queries: typically 1KB query, 1-10KB response
+            estimated_tx = max(base_tx, 1000)   # ~1KB query
+            estimated_rx = max(base_rx, 5000)   # ~5KB response
+        
+        # API/Service mesh traffic
+        elif remote_port in [6443, 2379, 2380, 10250, 10255]:
+            # K8s API calls: typically small requests and responses
+            estimated_tx = max(base_tx, 500)    # ~500B request
+            estimated_rx = max(base_rx, 2000)   # ~2KB response
+        
+        # Monitoring/metrics traffic
+        elif remote_port in [9100, 9090, 3000, 8086, 9093]:
+            # Metrics scraping: typically small requests, larger responses
+            estimated_tx = max(base_tx, 200)    # ~200B request
+            estimated_rx = max(base_rx, 10000)  # ~10KB metrics response
+        
+        # Message queues/streaming
+        elif remote_port in [9092, 5672, 4222, 1883]:
+            # Message traffic: variable, moderate estimate
+            estimated_tx = max(base_tx, 2000)   # ~2KB message
+            estimated_rx = max(base_rx, 2000)   # ~2KB message
+        
+        # DNS traffic
+        elif remote_port == 53:
+            # DNS queries: very small
+            estimated_tx = max(base_tx, 100)    # ~100B query
+            estimated_rx = max(base_rx, 200)    # ~200B response
+        
+        # SSH/administrative
+        elif remote_port == 22:
+            # SSH: typically small interactive traffic
+            estimated_tx = max(base_tx, 500)    # ~500B command
+            estimated_rx = max(base_rx, 1000)   # ~1KB response
+        
+        # Default for unknown ports
+        else:
+            # Conservative estimate for unknown traffic
+            estimated_tx = max(base_tx, 1000)   # ~1KB
+            estimated_rx = max(base_rx, 1000)   # ~1KB
+        
+        # If this is a server port (listening), reverse the traffic pattern
+        # (more incoming than outgoing)
+        if local_port < 1024 or local_port in [8080, 8443, 9090]:
+            # This appears to be a server connection, swap tx/rx estimates
+            estimated_tx, estimated_rx = estimated_rx, estimated_tx
+        
+        return {
+            'tx': estimated_tx,
+            'rx': estimated_rx
+        }
 
     def _read_all_tcp_connections(self) -> List[Dict]:
         """Read TCP connections from all accessible namespaces"""
