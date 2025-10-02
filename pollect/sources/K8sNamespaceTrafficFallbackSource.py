@@ -341,6 +341,12 @@ class K8sNamespaceTrafficFallbackSource(Source):
         # Get current TCP connections
         connections = self._read_tcp_connections()
         
+        if self._debug_namespace_detection:
+            self.log.info(f"Found {len(connections)} total TCP connections")
+            # Show first few connections for debugging
+            for i, conn in enumerate(connections[:5]):
+                self.log.info(f"  Connection {i+1}: {conn['local_addr']}:{conn['local_port']} -> {conn['remote_addr']}:{conn['remote_port']}")
+        
         # Get network interface statistics for byte counts
         interface_stats = self._read_interface_statistics()
         
@@ -385,6 +391,11 @@ class K8sNamespaceTrafficFallbackSource(Source):
             except Exception as e:
                 self.log.debug(f"Error processing connection: {e}")
                 continue
+        
+        if self._debug_namespace_detection:
+            self.log.info(f"Final connection stats: {len(connection_stats)} namespace/network combinations")
+            for key, stats in connection_stats.items():
+                self.log.info(f"  {key}: {stats['connections']} connections")
         
         # If we have interface statistics, try to estimate byte counts
         if interface_stats:
