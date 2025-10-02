@@ -428,9 +428,16 @@ class K8sNamespaceTrafficFallbackSource(Source):
         
         # Log what we detected for debugging
         if self._namespace_ips:
-            self.log.debug(f"Detected {len(self._namespace_ips)} namespaces: {list(self._namespace_ips.keys())}")
-            for namespace, ips in self._namespace_ips.items():
-                self.log.debug(f"  {namespace}: {len(ips)} IPs")
+            if self._debug_namespace_detection:
+                self.log.info(f"Updated namespace mappings: {len(self._namespace_ips)} namespaces")
+                for namespace, ips in self._namespace_ips.items():
+                    sample_ips = list(ips)[:3]  # Show first 3 IPs
+                    more_text = f" (+{len(ips)-3} more)" if len(ips) > 3 else ""
+                    self.log.info(f"  {namespace}: {sample_ips}{more_text}")
+            else:
+                self.log.debug(f"Detected {len(self._namespace_ips)} namespaces: {list(self._namespace_ips.keys())}")
+                for namespace, ips in self._namespace_ips.items():
+                    self.log.debug(f"  {namespace}: {len(ips)} IPs")
         else:
             self.log.warning(f"No namespace IPs detected using runtime {self._runtime_type}")
         
@@ -445,6 +452,10 @@ class K8sNamespaceTrafficFallbackSource(Source):
         # Convert address to string for logging
         addr_str = str(ipaddress.IPv4Address(local_address))
         
+        # Always log what we're trying to resolve for debugging
+        if self._debug_namespace_detection:
+            self.log.info(f"Resolving namespace for address {addr_str}")
+        
         # First try to match against detected namespace IPs
         for namespace, ips in self._namespace_ips.items():
             for ip_cidr in ips:
@@ -453,24 +464,27 @@ class K8sNamespaceTrafficFallbackSource(Source):
                     ip_str = ip_cidr.split('/')[0]
                     ip_int = int(ipaddress.IPv4Address(ip_str))
                     if ip_int == local_address:
-                        self.log.debug(f"Address {addr_str} matched namespace {namespace}")
+                        if self._debug_namespace_detection:
+                            self.log.info(f"✅ Address {addr_str} matched namespace {namespace}")
                         return namespace
                 except:
                     continue
         
         # If no namespace match found, check if we have any namespace data at all
         if not self._namespace_ips:
-            self.log.warning(f"No namespace IPs available for address {addr_str} - runtime detection may have failed")
+            if self._debug_namespace_detection:
+                self.log.warning(f"❌ No namespace IPs available for address {addr_str} - runtime detection may have failed")
             return 'no-namespace-data'
         
         # If we have namespace data but no match, this might be a host network pod
-        # Don't fall back to network classification - return unknown
-        self.log.debug(f"Address {addr_str} not found in any of {len(self._namespace_ips)} detected namespaces")
-        
-        # Log the first few IPs from each namespace for debugging
-        for ns, ips in list(self._namespace_ips.items())[:3]:
-            sample_ips = list(ips)[:2]
-            self.log.debug(f"  Namespace {ns} has IPs: {sample_ips}")
+        # Log detailed debugging info
+        if self._debug_namespace_detection:
+            self.log.warning(f"❌ Address {addr_str} not found in any of {len(self._namespace_ips)} detected namespaces")
+            
+            # Log the first few IPs from each namespace for debugging
+            for ns, ips in list(self._namespace_ips.items())[:3]:
+                sample_ips = list(ips)[:2]
+                self.log.info(f"   Namespace {ns} has IPs: {sample_ips}")
         
         return 'host-network'
 
