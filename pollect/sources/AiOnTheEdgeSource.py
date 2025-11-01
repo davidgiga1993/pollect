@@ -1,5 +1,6 @@
+from typing import Optional, List
+
 import requests
-from typing import Optional, List, Dict
 
 from pollect.core.ValueSet import ValueSet, Value
 from pollect.sources.Source import Source

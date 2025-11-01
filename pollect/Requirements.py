@@ -12,6 +12,7 @@ class DependencyRequirements:
 
     def __init__(self):
         self.deps: Dict[str, List[str]] = {
+            'AiOnTheEdgeSource': [],
             'AppStoreConnectSource': ['appstoreconnect==0.10.0'],
             'CertificateSource': ['pyOpenSSL~=25.0.0'],
             'BindSource': [],
