@@ -38,7 +38,7 @@ class EspHomeSource(Source):
         asyncio.run_coroutine_threadsafe(self._api.disconnect(), self._loop).result(15)
         self._loop.stop()
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         return self._values
 
     def _connect_async(self):

@@ -48,7 +48,7 @@ class K8sNamespaceTrafficSource(Source):
         if self._traffic_log_mode is not None:
             self.log.info(f'Traffic logging enabled: {self._traffic_log_mode}')
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         self._metrics.update_networks()
 
         ipv4_send_bytes = self._b["ipv4_send_bytes"]

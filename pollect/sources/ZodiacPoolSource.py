@@ -44,7 +44,7 @@ class ZodiacPoolSource(Source):
             self._login()
             return
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         values = ValueSet(labels=['device_serial'])
         for device in self.api.get_system_list_v2():
             state = self.api.get_device_info(device.serial_number)

@@ -17,7 +17,7 @@ class SmaPvModbusSource(Source):
     def shutdown(self):
         self._sma.close()
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         if not self._sma.is_connected():
             self._sma.connect()
         base_set = ValueSet()

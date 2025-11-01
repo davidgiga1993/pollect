@@ -31,7 +31,7 @@ class CertificateSource(Source):
                 elif parsed_url.scheme == 'http':
                     self.port = 80
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         value_set = ValueSet()
         expire_days = self.get_expire_days(self.host, self.port)
         value_set.add(Value(expire_days, name='cert_expire_days'))

@@ -16,7 +16,7 @@ class OpenhabSource(Source):
         super().__init__(config)
         self._url = config.get('url')
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         reply = requests.get(self._url + '/rest/items')
         data = reply.json()
 

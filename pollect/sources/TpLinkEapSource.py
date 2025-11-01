@@ -25,7 +25,7 @@ class TpLinkEapSource(Source):
         self._pass = config['password']
         self._session = requests.Session()
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         ap_data = self._get('/data/monitor.ap.aplist.json?operation=load')
         aps = ap_data['data']
         ap = aps[0]

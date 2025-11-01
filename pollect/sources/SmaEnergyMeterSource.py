@@ -36,7 +36,7 @@ class SmaEnergyMeterSource(Source):
     def shutdown(self):
         self._sma.stop()
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         value_set = ValueSet(labels=['phase'])
         value_set.values.extend(self._cache.flush_values())
         if len(value_set.values) == 0:

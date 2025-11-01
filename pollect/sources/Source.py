@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import typing
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import Optional, List
 
 from pollect.core import OSEnv
@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
     from pollect.core.Core import Configuration
 
 
-class Source(Log):
+class Source(Log, ABC):
     """
     A single metrics source. May return multiple metrics and labels
     """
@@ -79,7 +79,7 @@ class Source(Log):
         pass
 
     @abstractmethod
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         """
         Probes the data and returns it
 

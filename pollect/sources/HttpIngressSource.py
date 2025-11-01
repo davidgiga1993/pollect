@@ -60,7 +60,7 @@ class HttpIngressSource(Source):
             self._server.stop()
             self._server = None
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         return list(self._metrics.values())
 
     def _update_metrics(self, data: Dict[str, any]):

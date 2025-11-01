@@ -89,7 +89,7 @@ class PmccSource(Source):
                         self._data.phasePower[x] = value
                 continue
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         if self._connection is None:
             return None
 

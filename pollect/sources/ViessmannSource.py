@@ -7,8 +7,8 @@ from __future__ import annotations
 from typing import Optional, List
 
 from pollect.core.ValueSet import ValueSet, Value
-from pollect.sources.Source import Source
 from pollect.libs.viessmann.ViessmannApi import ViessmannApi, ViessmannOauth, Device
+from pollect.sources.Source import Source
 
 
 class ViessmannSource(Source):
@@ -21,7 +21,7 @@ class ViessmannSource(Source):
         self._auth = ViessmannOauth(client_id, callback_url, self.AUTH_FILE)
         self.api = ViessmannApi(self._auth)
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         try:
             self._auth.get_token()
         except ValueError:

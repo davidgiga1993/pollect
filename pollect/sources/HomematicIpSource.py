@@ -25,7 +25,7 @@ class HomematicIpSource(Source):
         self._home.set_auth_token(self._auth_token)
         self._home.init(self._access_point)
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         values = ValueSet(labels=['room'])
         self._home.get_current_state()
         for group in self._home.groups:

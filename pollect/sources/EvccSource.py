@@ -17,7 +17,7 @@ class EvccSource(Source):
         super().__init__(config)
         self._host = config['host']
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         # Use a new connection every time since we don't care about
         # events
         data = self._get_data()

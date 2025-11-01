@@ -45,7 +45,7 @@ class AppStoreConnectSource(Source):
         self._vendor = config['vendorNumber']
         self._db_dir = config.get('dbDir', 'db')
 
-    def _probe(self) -> Optional[ValueSet] or List[ValueSet]:
+    def _probe(self) -> Optional[ValueSet] | List[ValueSet]:
         self.log.info('Downloading AppStore report...')
         report_file = os.path.join(self._db_dir, 'report_' + self._vendor + '.csv')
 
