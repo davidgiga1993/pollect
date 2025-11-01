@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
+import secrets
 import time
+from hashlib import sha256
 from typing import Dict, Optional, List
 
 import requests
@@ -119,8 +122,8 @@ class OAuthToken:
 
 
 class ViessmannOauth:
-    authorize_url = "https://iam.viessmann.com/idp/v2/authorize"
-    token_url = "https://iam.viessmann.com/idp/v2/token"
+    authorize_url = "https://iam.viessmann.com/idp/v3/authorize"
+    token_url = "https://iam.viessmann.com/idp/v3/token"
 
     # These settings are from the ViCare app and are not used anymore
     CLIENT_ID = '79742319e39245de5f91d15ff4cac2a8'
@@ -148,38 +151,43 @@ class ViessmannOauth:
         return self._current_token
 
     def authorize(self):
+        challenge: str = secrets.token_hex(64)
+        h = sha256()
+        h.update(challenge.encode('utf-8'))
+        challenge_s256: str = base64.urlsafe_b64encode(h.digest()).decode().rstrip("=")
+
         authorization_redirect_url = self.authorize_url + '?response_type=code' \
                                                           '&client_id=' + self._client_id + \
                                      '&redirect_uri=' + self._callback_url + \
                                      '&response_type=code' \
-                                     '&code_challenge_method=plain' \
-                                     '&code_challenge=DbyrQKpOn0Iy07u6ydCdo5XFVO4fIb7cIJW6mnLPDVc' \
+                                     '&code_challenge_method=S256' \
+                                     '&code_challenge=' + challenge_s256 + \
                                      '&scope=IoT%20User%20offline_access'
 
         print("Go to the following url and enter the code from the returned url: ")
         print(authorization_redirect_url)
 
-        authorization_code = ''
-        while authorization_code == '':
+        while True:
             authorization_code = input('code=')
             if len(authorization_code) < 10:
                 print('Invalid code, try again')
-                authorization_code = ''
+                continue
 
-        data = {'grant_type': 'authorization_code',
-                'client_id': self._client_id,
-                'code': authorization_code,
-                'redirect_uri': self._callback_url,
-                'code_verifier': 'DbyrQKpOn0Iy07u6ydCdo5XFVO4fIb7cIJW6mnLPDVc',
-                }
-        print("Requesting access token")
-        access_token_response = requests.post(self.token_url, data=data, allow_redirects=False)
-        if access_token_response.status_code != 200:
-            raise ValueError('Access token request failed: ' + str(access_token_response.text))
+            data = {'client_id': self._client_id,
+                    'redirect_uri': self._callback_url,
+                    'grant_type': 'authorization_code',
+                    'code': authorization_code,
+                    'code_verifier': challenge,
+                    }
+            print("Requesting access token")
+            access_token_response = requests.post(self.token_url, data=data, allow_redirects=False)
+            if access_token_response.status_code != 200:
+                print('Access token request failed: ' + str(access_token_response.text))
+                continue
 
-        token = OAuthToken(access_token_response.json())
-        self._set_token(token)
-        return token
+            token = OAuthToken(access_token_response.json())
+            self._set_token(token)
+            return token
 
     def refresh(self, refresh_token: str = None) -> OAuthToken:
         if refresh_token is None:
