@@ -122,8 +122,8 @@ class OAuthToken:
 
 
 class ViessmannOauth:
-    authorize_url = "https://iam.viessmann.com/idp/v3/authorize"
-    token_url = "https://iam.viessmann.com/idp/v3/token"
+    authorize_url = "https://iam.viessmann-climatesolutions.com/idp/v3/authorize"
+    token_url = "https://iam.viessmann-climatesolutions.com/idp/v3/token"
 
     # These settings are from the ViCare app and are not used anymore
     CLIENT_ID = '79742319e39245de5f91d15ff4cac2a8'
