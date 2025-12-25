@@ -30,7 +30,7 @@ class Feature(JsonObject):
         self.links = data.get('links', [])
         self.actions = data.get('actions', [])
 
-    def get_property(self, property_name: str):
+    def get_property(self, property_name: str) -> Dict[str, any] | None:
         return self.properties.get(property_name)
 
     def get_property_value(self, property_name: str) -> Optional[any]:
@@ -50,11 +50,11 @@ class FeatureList:
     def __init__(self, data):
         self.features = [Feature(x) for x in data['data']]
 
-    def get_feature(self, name: str) -> Feature:
+    def get_feature(self, name: str) -> Feature|None:
         for feature in self.features:
             if feature.feature == name:
                 return feature
-        raise KeyError('Feature ' + name + ' not found')
+        return None
 
 
 class Device(JsonObject):
