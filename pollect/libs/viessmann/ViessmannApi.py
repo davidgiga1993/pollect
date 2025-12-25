@@ -71,6 +71,7 @@ class Gateway(JsonObject):
         super().__init__(data)
         self.serial = data['serial']
         self.version = data['version']
+        self.installation_id = data['installationId']
         self.aggregated_status = data['aggregatedStatus']
         self.devices = [Device(x) for x in data.get('devices', [])]
 
@@ -280,25 +281,18 @@ class ViessmannApi:
     def __init__(self, auth: ViessmannOauth):
         self._auth = auth
 
-    def get_installations(self):
-        reply = self._get('/v1/equipment/installations?includeGateways=true')
-        installations = reply.get('data', [])
-        return [Installation(x) for x in installations]
+    def get_gateways(self) -> List[Gateway]:
+        reply = self._get('/v2/equipment/gateways?includeDevices=true')
+        gw = reply.get('data', [])
+        return [Gateway(x) for x in gw]
 
     def get_feature(self, installation_id: int, gateway_serial: str, device_id: str, feature: str) -> FeatureList:
-        data = self.get_operational_data(installation_id, gateway_serial, device_id, '/features/' + feature)
+        data = self._get(f"/v2/features/installations/{installation_id}/gateways/{gateway_serial}/devices/{device_id}/features/{feature}")
         return FeatureList(data)
 
     def get_features(self, installation_id: int, gateway_serial: str, device_id: str) -> FeatureList:
-        data = self.get_operational_data(installation_id, gateway_serial, device_id, '/features')
+        data = self._get(f"/v2/features/installations/{installation_id}/gateways/{gateway_serial}/devices/{device_id}/features")
         return FeatureList(data)
-
-    def get_operational_data(self, installation_id: int, gateway_serial: str, device_id: str, path: str):
-        data = self._get('/v1/equipment/installations/' + str(installation_id) +
-                         '/gateways/' + gateway_serial +
-                         '/devices/' + device_id +
-                         path)
-        return data
 
     def execute_action(self, action, data: Dict[str, any]):
         method = action['method']

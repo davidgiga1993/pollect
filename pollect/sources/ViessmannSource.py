@@ -29,9 +29,9 @@ class ViessmannSource(Source):
             self._auth.authorize()
 
         main_set = ValueSet()
-        installations = self.api.get_installations()
-        install_id = installations[0].id
-        gateway = installations[0].gateways[0]
+        gateways = self.api.get_gateways()
+        install_id = gateways[0].installation_id
+        gateway = gateways[0]
         gateway_serial = gateway.serial
         device_id = '0'
         # Search for correct device id
