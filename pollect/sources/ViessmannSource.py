@@ -15,8 +15,8 @@ from pollect.sources.Source import Source
 class ViessmannSource(Source):
     AUTH_FILE = 'viessmann_token.json'
 
-    CIRCUIT_PATTERN = re.compile(r"heating\.circuits\.(\d+)\.(.+)")
-    COMPRESSOR_PATTERN = re.compile(r"heating\.compressors\.(\d+)\.(.+)")
+    CIRCUIT_PATTERN = re.compile(r"(heating\.circuits)\.(\d+)\.?(.*)")
+    COMPRESSOR_PATTERN = re.compile(r"(heating\.compressors)\.(\d+)\.?(.*)")
 
     def __init__(self, config):
         super().__init__(config)
@@ -61,11 +61,8 @@ class ViessmannSource(Source):
 
         main_set = ValueSet()
         circuit_set = ValueSet(labels=['circuit'])
-        circuit_set.name = "heating.circuit"
         compressor_set = ValueSet(labels=['compressor'])
-        compressor_set.name = 'heating.compressor'
         compressor_phase_set = ValueSet(labels=['phase', 'compressor'])
-        compressor_phase_set.name = 'heating.compressor'
 
         for feature in features.features:
             target_set = main_set
@@ -79,14 +76,16 @@ class ViessmannSource(Source):
             match = self.CIRCUIT_PATTERN.match(feature_name)
             if match:
                 target_set = circuit_set
-                label_values = [match.group(1)]
-                feature_name = match.group(2)
+                feature_name = match.group(1) + "." + match.group(3)
+                label_values = [match.group(2)]
 
             match = self.COMPRESSOR_PATTERN.match(feature_name)
             if match:
                 target_set = compressor_set
-                label_values = [match.group(1)]
-                feature_name = match.group(2)
+                feature_name = match.group(1) + "." + match.group(3)
+                label_values = [match.group(2)]
+            if feature_name.endswith("."):
+                feature_name = feature_name[:-1]
 
             # Some features have value and status properties
             # but the value is most important for us. Status is seen as a fallback
@@ -130,7 +129,8 @@ class ViessmannSource(Source):
             ("off", False),
         ]
         for comp in range(0, 2):
-            comp_feature = features.get_feature(f'heating.compressors.{comp}')
+            prefix = 'heating.compressors.'
+            comp_feature = features.get_feature(prefix + str(comp))
             if comp_feature is not None:
                 compressor_phase = comp_feature.get_property_value('phase')
                 if compressor_phase is not None:
@@ -139,29 +139,29 @@ class ViessmannSource(Source):
                         phase_name = phase[0]
                         is_active_phase = phase_name == compressor_phase
                         compressor_phase_set.add(Value(is_active_phase,
-                                                       name='phase', label_values=[phase_name, str(comp)]))
+                                                       name=prefix + 'phase', label_values=[phase_name, str(comp)]))
                         if is_active_phase:
                             comp_on = phase[1]
 
-                    compressor_set.add(Value(comp_on, name='active', label_values=[str(comp)]))
+                    compressor_set.add(Value(comp_on, name=prefix + 'active', label_values=[str(comp)]))
 
-            compressor_stats = features.get_feature(f'heating.compressors.{comp}.statistics')
+            compressor_stats = features.get_feature(prefix + str(comp) + '.statistics')
             if compressor_stats is not None:
                 comp_starts = compressor_stats.get_property_value('starts')
                 if comp_starts is not None:
-                    compressor_set.add(Value(comp_starts, name='stats_starts', label_values=[str(comp)]))
+                    compressor_set.add(Value(comp_starts, name=prefix + 'stats_starts', label_values=[str(comp)]))
 
                 comp_hours = compressor_stats.get_property_value('hours')
                 if comp_hours is not None:
-                    compressor_set.add(Value(comp_hours, name='stats_hours', label_values=[str(comp)]))
+                    compressor_set.add(Value(comp_hours, name=prefix + 'stats_hours', label_values=[str(comp)]))
 
-            compressor_stats_load = features.get_feature(f'heating.compressors.{comp}.statistics.load')
+            compressor_stats_load = features.get_feature(prefix + str(comp) + '.statistics.load')
             if compressor_stats_load is not None:
                 for load_class_idx in range(len(load_classes)):
                     load_class = load_classes[load_class_idx]
                     comp_hours = compressor_stats_load.get_property_value(load_class)
                     if comp_hours is not None:
-                        compressor_set.add(Value(comp_hours, name='stats_hours_class_' + str(load_class_idx + 1),
+                        compressor_set.add(Value(comp_hours, name=prefix + 'stats_hours_class_' + str(load_class_idx + 1),
                                                  label_values=[str(comp)]))
 
         return [main_set, compressor_phase_set, compressor_set]
