@@ -164,7 +164,7 @@ class ViessmannSource(Source):
                         compressor_set.add(Value(comp_hours, name=prefix + 'stats_hours_class_' + str(load_class_idx + 1),
                                                  label_values=[str(comp)]))
 
-        return [main_set, compressor_phase_set, compressor_set]
+        return [main_set, compressor_phase_set, compressor_set, circuit_set]
 
     def _add_numeric(self, prop: Dict[str, any], feature_name: str, main_set: ValueSet, label_values: List[str]):
         val_type = prop.get("type", "")
