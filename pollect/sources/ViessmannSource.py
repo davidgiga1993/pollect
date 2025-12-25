@@ -168,6 +168,9 @@ class ViessmannSource(Source):
 
     def _add_numeric(self, prop: Dict[str, any], feature_name: str, main_set: ValueSet, label_values: List[str]):
         val_type = prop.get("type", "")
+        if val_type == "string":
+            # Simply ignore
+            return
         if val_type == "number":
             main_set.add(Value(prop["value"], name=feature_name, label_values=label_values))
             return
