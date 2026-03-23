@@ -10,5 +10,5 @@ class TestCertificate(TestCase):
         source = CertificateSource(data)
         results = source.probe()[0]
         self.assertEqual(1, len(results.values))
-        self.assertEqual(0, len(results.labels))
+        self.assertEqual(1, len(results.labels))
         self.assertTrue(results.values[0].value > 10)
