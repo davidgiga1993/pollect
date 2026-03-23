@@ -6,7 +6,7 @@ on:
     types: [published]
 
 env:
-  PYTHON_VERSION: "3.15"
+  PYTHON_VERSION: "3.x"
   DOCKER_IMAGE: davidgiga1993/pollect
 
 jobs:
