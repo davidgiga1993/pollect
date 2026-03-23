@@ -17,12 +17,12 @@ pollect is a daemon for collecting system and application metrics in periodical 
  ---------------
 ```
 
-pollect uses `executors` which contain `sources` for probing the data. The data is exported using the `collection` name.
+pollect uses `executors` which contain `sources` for probing the data.
 
 For persisting the data `writers` are used. They can be defined globally (for all executors)
 or on a per executor level.
 
-By default, the tick time is defined globally, but can be changed on a executor level.
+By default, the tick time is defined globally, but can be changed on an executor level.
 
 # Usage
 
@@ -78,13 +78,17 @@ A more advanced configuration sample can be found in the `pollect.[json|yml]` fi
 
 The metric names are automatically build out of the collection, source and value name. Example:
 
-Pattern: `${collection}_${sourceType}[_${sourceName}][_$valueName}]`
+If no dedicated `name` is specified for a source, it's `type` is used.
+
+Pattern: `collectionName.sourceType[.sourceName].valueName`
 
 | Collection | Source type | Source name (optional) | Resulting metric name                                            |
 |------------|-------------|------------------------|------------------------------------------------------------------|
-| pollect    | Http        |                        | pollect_Http                                                     |
-| pollect    | Http        | test                   | pollect_Http_test                                                |
-| pollect    | Process     |                        | pollect_Process_load_percent <br> pollect_Process_virtual_memory |
+| pollect    | Http        |                        | pollect.Http                                                     |
+| pollect    | Http        | test                   | pollect.Http.test                                                |
+| pollect    | Process     |                        | pollect.Process.load_percent <br> pollect.Process.virtual_memory |
+
+Depending on the writer, the `.` separators might be replaced with `_`.
 
 # Sources
 
@@ -497,6 +501,14 @@ writers:
       - "pollect\\.smaenergymeter/wirkleistung_.+/phase/0"
       - "pollect\\.smapvmodbus/.+"
 ```
+
+The `includePattern` is matched against the absolute path of any collected value.
+The path is formatted using:
+
+```
+collectionName.sourceName/valueName[/labelName/labelValue]
+```
+
 
 # Dependency Management
 
