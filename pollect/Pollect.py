@@ -59,7 +59,6 @@ def main():
     scheduler = None
 
     def signal_handler(signal, frame):
-        nonlocal scheduler
         if scheduler is not None:
             scheduler.stop()
         sys.exit(0)
