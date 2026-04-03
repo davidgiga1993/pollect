@@ -14,11 +14,11 @@ class DependencyRequirements:
         self.deps: Dict[str, List[str]] = {
             'AiOnTheEdgeSource': [],
             'AppStoreConnectSource': ['appstoreconnect==0.10.0'],
-            'CertificateSource': ['pyOpenSSL~=25.0.0'],
+            'CertificateSource': ['pyOpenSSL~=26.0.0'],
             'BindSource': [],
             'DiskUsageSource': [],
             'DummySource': [],
-            'EspHomeSource': ['aioesphomeapi~=28.0'],
+            'EspHomeSource': ['aioesphomeapi~=44.8'],
             'EvccSource': ['websocket_client~=1.8'],
             'FritzSource': ['fritzconnection~=1.14.0'],
             'GdcSource': ['google-cloud-storage~=2.19.0'],

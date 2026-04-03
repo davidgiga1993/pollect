@@ -23,10 +23,10 @@ class EspHomeSource(Source):
         super().__init__(config)
         self._values = ValueSet(['name'])
 
-        hostname = config['host']
-        port = config.get('port', 6053)
-        psk = config['psk']
-        self._api = aioesphomeapi.APIClient(hostname, port, password='', noise_psk=psk)
+        self._hostname = config['host']
+        self._port = config.get('port', 6053)
+        self._psk = config['psk']
+        self._api: aioesphomeapi.APIClient = None
 
     def setup_source(self, global_conf):
         super().setup_source(global_conf)
@@ -44,7 +44,11 @@ class EspHomeSource(Source):
     def _connect_async(self):
         t = Thread(target=self._start_background_loop, args=(self._loop,), daemon=True)
         t.start()
+        asyncio.run_coroutine_threadsafe(self._create_client(), self._loop)
         asyncio.run_coroutine_threadsafe(self._connect(), self._loop)
+
+    async def _create_client(self):
+        self._api = aioesphomeapi.APIClient(self._hostname, self._port, password='', noise_psk=self._psk)
 
     async def _on_stop(self, expected_disconnect: bool):
         if expected_disconnect:
