@@ -28,6 +28,7 @@ class DependencyRequirements:
             'InterfaceSource': [self.PSUTIL],
             'IOSource': [self.PSUTIL],
             'K8sNamespaceTrafficSource': ['https://github.com/iovisor/bcc/blob/master/INSTALL.md'],
+            'K8sNamespaceTrafficFallbackSource': [],
             'MemoryUsageSource': [self.PSUTIL],
             'MMISource': [],
             'OpenhabSource': [],
